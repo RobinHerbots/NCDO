@@ -2,6 +2,11 @@ using System;
 using NCDO.Definitions;
 using System.Linq;
 using System.Data;
+using NCDO.Catalog;
+using System.Json;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Text;
 
 namespace NCDO.Interfaces
 {
@@ -43,7 +48,7 @@ namespace NCDO.Interfaces
         ///current CDO is created.
         ///This can be multiple tables
         /// </summary>
-        DataTableCollection TableReference { get; }
+        JsonObject TableReference { get; }
         /// <summary>
         /// A Boolean that specifies whether CDO methods that
         ///operate on table references in CDO memory work with the
@@ -63,7 +68,7 @@ namespace NCDO.Interfaces
         /// Accepts changes to the data in CDO memory for a specified
         ///record object.
         /// </summary>
-        void AcceptRowChanges();
+        bool AcceptRowChanges();
         /// <summary>
         /// Reads the record objects stored in the specified local storage
         ///area and updates CDO memory based on these record
@@ -95,7 +100,7 @@ namespace NCDO.Interfaces
         ///ProDataSet, as returned by the built-in read operation of the
         ///resource for which the CDO is created.
         /// </summary>
-        void fill();
+        void Fill();
         /// <summary>
         /// Returns an array of errors from the most recent CDO
         ///operation.
@@ -142,7 +147,7 @@ namespace NCDO.Interfaces
         ///CDO to execute an Invoke operation defined by a Data
         ///Object resource.
         /// </summary>
-        void Invoke();
+        Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null);
         /// <summary>
         /// Initializes CDO memory with record objects from the data
         ///records in a single table, or in one or more tables of a
@@ -206,105 +211,15 @@ namespace NCDO.Interfaces
         void Sort();
 
         #endregion
-        #region Events
-        /// <summary>
-        /// Fires after the CDO, by means of a saveChanges( ) call
-        ///following an add() or create() call, sends a request to
-        ///create a record and receives a response to this request
-        ///from the Cloud Data Server.
-        /// </summary>
-        event EventHandler<CDOEventArgs> AfterCreate;
-        /// <summary>
-        /// Fires after the CDO, by means of a saveChanges( ) call
-        ///following a remove() call, sends a request to delete a
-        ///record and receives a response to this request from the
-        ///Cloud Data Server.
-        /// </summary>
-        event EventHandler<CDOEventArgs> AfterDelete;
-        /// <summary>
-        /// Fires after the CDO, by means of a fill( ) call, sends a
-        ///request to read a table or ProDataSet into CDO memory
-        ///and receives a response to this request from the Cloud Data
-        ///Server.
-        /// </summary>
-        event EventHandler<CDOEventArgs> AfterFill;
-        /// <summary>
-        /// Fires after a non-built-in method is called asynchronously
-        ///on a CDO and a response to the request is received from
-        ///the Cloud Data Server.
-        /// </summary>
-        event EventHandler<CDOEventArgs> AfterInvoke;
-        /// <summary>
-        /// Fires after the CDO, by means of a read( ) call, sends a
-        ///request to read a table or ProDataSet into CDO memory
-        ///and receives a response to this request from the Cloud Data
-        ///Server.
-        /// </summary>
-        event EventHandler<CDOEventArgs> AfterRead;
-        /// <summary>
-        /// Fires once for each call to the saveChanges( ) method
-        ///on a CDO, after responses to all create, update, and delete
-        ///requests have been received from the Cloud Data Server.
-        /// </summary>
-        event EventHandler<CDOEventArgs> AfterSaveChanges;
-        /// <summary>
-        /// Fires after the CDO, by means of a saveChanges( ) call
-        ///following an assign( ) or update() call, sends a request
-        ///to update a record and receives a response to this
-        ///request from the Cloud Data Server.
-        /// </summary>
-        event EventHandler<CDOEventArgs> AfterUpdate;
-        /// <summary>
-        /// Fires before the CDO, by means of a saveChanges( )
-        ///call making an add( ) or create() call, sends a request the
-        ///Cloud Data Server to create a record.
-        /// </summary>
-        event EventHandler<CDOEventArgs> BeforeCreate;
-        /// <summary>
-        /// Fires before the CDO, by means of a saveChanges( )
-        ///call making a remove( ) call, sends a request the
-        ///Cloud Data Server to delete a record.
-        /// </summary>
-        event EventHandler<CDOEventArgs> BeforeDelete;
-        /// <summary>
-        /// Fires before the CDO, by means of a fill( ) call, sends
-        ///a request to the Cloud Data Server to read a table or
-        ///ProDataSet into CDO memory.
-        /// </summary>
-        event EventHandler<CDOEventArgs> BeforeFill;
-        /// <summary>
-        /// Fires when a non-built-in method is called asynchronously
-        ///on a CDO, before the request for the operation is sent to
-        ///the Cloud Data Server.
-        /// </summary>
-        event EventHandler<CDOEventArgs> BeforeInvoke;
-        /// <summary>
-        /// Fires before the CDO, by means of a read( ) call, sends
-        ///a request to the Cloud Data Server to read a table or
-        ///ProDataSet into CDO memory.
-        /// </summary>
-        event EventHandler<CDOEventArgs> BeforeRead;
-        /// <summary>
-        /// Fires once for each call to the saveChanges( ) method
-        ///on a CDO, before any create, update, or delete requests
-        ///are sent to the Cloud Data Server.
-        /// </summary>
-        event EventHandler<CDOEventArgs> BeforeSaveChanges;
-        /// <summary>
-        /// Fires before the CDO, by means of a saveChanges( )
-        ///call making an assign( ) or update() call, sends a
-        ///request the Cloud Data Server to update a record.
-        /// </summary>
-        event EventHandler<CDOEventArgs> BeforeUpdate;
-
-        #endregion
     }
 
     /// <summary>
     /// The CDO provides access to resources in a Cloud Data Service, known as a Cloud Data Resource. 
     /// </summary>
-    interface ICloudDataObject<T> : ICloudDataObject where T : class
+    public interface ICloudDataObject<T> : ICloudDataObject where T : class
     {
+
+
         #region Properties
         /// <summary>
         /// A property on a CDO table reference that references a
@@ -344,6 +259,100 @@ namespace NCDO.Interfaces
         /// </summary>
         /// <returns></returns>
         ICloudDataRecord<T>[] GetData();
+
+        Task ProcessResponse(HttpClient client, HttpResponseMessage response, CDORequest request);
+        #endregion
+        #region Events
+        /// <summary>
+        /// Fires after the CDO, by means of a saveChanges( ) call
+        ///following an add() or create() call, sends a request to
+        ///create a record and receives a response to this request
+        ///from the Cloud Data Server.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> AfterCreate;
+        /// <summary>
+        /// Fires after the CDO, by means of a saveChanges( ) call
+        ///following a remove() call, sends a request to delete a
+        ///record and receives a response to this request from the
+        ///Cloud Data Server.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> AfterDelete;
+        /// <summary>
+        /// Fires after the CDO, by means of a fill( ) call, sends a
+        ///request to read a table or ProDataSet into CDO memory
+        ///and receives a response to this request from the Cloud Data
+        ///Server.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> AfterFill;
+        /// <summary>
+        /// Fires after a non-built-in method is called asynchronously
+        ///on a CDO and a response to the request is received from
+        ///the Cloud Data Server.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> AfterInvoke;
+        /// <summary>
+        /// Fires after the CDO, by means of a read( ) call, sends a
+        ///request to read a table or ProDataSet into CDO memory
+        ///and receives a response to this request from the Cloud Data
+        ///Server.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> AfterRead;
+        /// <summary>
+        /// Fires once for each call to the saveChanges( ) method
+        ///on a CDO, after responses to all create, update, and delete
+        ///requests have been received from the Cloud Data Server.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> AfterSaveChanges;
+        /// <summary>
+        /// Fires after the CDO, by means of a saveChanges( ) call
+        ///following an assign( ) or update() call, sends a request
+        ///to update a record and receives a response to this
+        ///request from the Cloud Data Server.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> AfterUpdate;
+        /// <summary>
+        /// Fires before the CDO, by means of a saveChanges( )
+        ///call making an add( ) or create() call, sends a request the
+        ///Cloud Data Server to create a record.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> BeforeCreate;
+        /// <summary>
+        /// Fires before the CDO, by means of a saveChanges( )
+        ///call making a remove( ) call, sends a request the
+        ///Cloud Data Server to delete a record.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> BeforeDelete;
+        /// <summary>
+        /// Fires before the CDO, by means of a fill( ) call, sends
+        ///a request to the Cloud Data Server to read a table or
+        ///ProDataSet into CDO memory.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> BeforeFill;
+        /// <summary>
+        /// Fires when a non-built-in method is called asynchronously
+        ///on a CDO, before the request for the operation is sent to
+        ///the Cloud Data Server.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> BeforeInvoke;
+        /// <summary>
+        /// Fires before the CDO, by means of a read( ) call, sends
+        ///a request to the Cloud Data Server to read a table or
+        ///ProDataSet into CDO memory.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> BeforeRead;
+        /// <summary>
+        /// Fires once for each call to the saveChanges( ) method
+        ///on a CDO, before any create, update, or delete requests
+        ///are sent to the Cloud Data Server.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> BeforeSaveChanges;
+        /// <summary>
+        /// Fires before the CDO, by means of a saveChanges( )
+        ///call making an assign( ) or update() call, sends a
+        ///request the Cloud Data Server to update a record.
+        /// </summary>
+        event EventHandler<CDOEventArgs<T>> BeforeUpdate;
+
         #endregion
     }
 
@@ -351,15 +360,17 @@ namespace NCDO.Interfaces
         where T : class
     {
         private ICDOSession _cDOSession;
-        private DataSet _cdoMemory = new DataSet();
+        private JsonObject _cdoMemory = new JsonObject();
+        private Service _serviceDefinition;
+        private Resource _resourceDefinition;
 
         /// <summary>
         /// CDO Constructor
         /// </summary>
-        /// <param name="respource">A string expression set to the name of a resource provided by a Cloud Data Service for
+        /// <param name="resource">A string expression set to the name of a resource provided by a Cloud Data Service for
         /// which a login session has been started.
         ///</param>
-        protected ACloudDataObject(string respource, ICDOSession cDOSession = null)
+        protected ACloudDataObject(string resource, ICDOSession cDOSession = null)
         {
             _cDOSession = cDOSession;
             if (_cDOSession == null)
@@ -371,24 +382,26 @@ namespace NCDO.Interfaces
                     throw new Exception("No session available");
                 }
             }
-            VerifyResourceName(respource);
-            Name = respource;
+            Name = resource;
+            InitCDO();
         }
+
+
 
         public bool AutoApplyChanges { get; set; }
         public bool AutoSort { get; set; }
         public bool CaseSensitive { get; set; }
         public string Name { get; }
-        public DataTableCollection TableReference => _cdoMemory.Tables;
+        public JsonObject TableReference { get; }
         public bool UseRelationships { get; set; }
         public void AcceptChanges()
         {
-            throw new NotImplementedException();
         }
 
-        public void AcceptRowChanges()
+        public bool AcceptRowChanges()
         {
-            throw new NotImplementedException();
+
+            return true;
         }
 
         public void AddLocalRecords()
@@ -411,8 +424,9 @@ namespace NCDO.Interfaces
             throw new NotImplementedException();
         }
 
-        public void fill()
+        public void Fill()
         {
+            BeforeFill?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = null });
             throw new NotImplementedException();
         }
 
@@ -446,9 +460,50 @@ namespace NCDO.Interfaces
             throw new NotImplementedException();
         }
 
-        public void Invoke()
+        public async Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null)
         {
-            throw new NotImplementedException();
+            var operationDefinition = VerifyOperation(operation);
+            //init request if needed
+            CDORequest cDORequest = new CDORequest
+            {
+                CDO = this,
+                FnName = operationDefinition.Name,
+                ObjParam = _serviceDefinition.UseRequest ? new JsonObject() { { "request", inputObject } } : inputObject
+            };
+
+            BeforeInvoke?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = cDORequest, Session = _cDOSession });
+
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage())
+                {
+                    request.Method = new HttpMethod(operationDefinition.Verb.ToString().ToUpper());
+                    //add authentication headers
+                    _cDOSession.OnOpenRequest(client, request);
+                    request.RequestUri = new Uri($"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{operationDefinition.Path}", UriKind.Absolute);
+                    //request body parmaters
+                    request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
+                    var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead);
+                    await ProcessResponse(client, response, cDORequest);
+                }
+            }
+            return cDORequest;
+        }
+
+        public virtual async Task ProcessResponse(HttpClient client, HttpResponseMessage response, CDORequest request)
+        {
+            request.Success = response.IsSuccessStatusCode;
+            request.ResponseMessage = response;
+            if (response.IsSuccessStatusCode)
+            {
+                using (var dataStream = await response.Content.ReadAsStreamAsync())
+                {
+                    if (dataStream != null)
+                    {
+                        request.Response = (JsonObject)JsonObject.Load(dataStream);
+                    }
+                }
+            }
         }
 
         public void Read()
@@ -478,6 +533,7 @@ namespace NCDO.Interfaces
 
         public void SaveChanges()
         {
+            BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = null });
             throw new NotImplementedException();
         }
 
@@ -501,30 +557,35 @@ namespace NCDO.Interfaces
             throw new NotImplementedException();
         }
 
-        public event EventHandler<CDOEventArgs> AfterCreate;
-        public event EventHandler<CDOEventArgs> AfterDelete;
-        public event EventHandler<CDOEventArgs> AfterFill;
-        public event EventHandler<CDOEventArgs> AfterInvoke;
-        public event EventHandler<CDOEventArgs> AfterRead;
-        public event EventHandler<CDOEventArgs> AfterSaveChanges;
-        public event EventHandler<CDOEventArgs> AfterUpdate;
-        public event EventHandler<CDOEventArgs> BeforeCreate;
-        public event EventHandler<CDOEventArgs> BeforeDelete;
-        public event EventHandler<CDOEventArgs> BeforeFill;
-        public event EventHandler<CDOEventArgs> BeforeInvoke;
-        public event EventHandler<CDOEventArgs> BeforeRead;
-        public event EventHandler<CDOEventArgs> BeforeSaveChanges;
-        public event EventHandler<CDOEventArgs> BeforeUpdate;
+        public event EventHandler<CDOEventArgs<T>> AfterCreate;
+        public event EventHandler<CDOEventArgs<T>> AfterDelete;
+        public event EventHandler<CDOEventArgs<T>> AfterFill;
+        public event EventHandler<CDOEventArgs<T>> AfterInvoke;
+        public event EventHandler<CDOEventArgs<T>> AfterRead;
+        public event EventHandler<CDOEventArgs<T>> AfterSaveChanges;
+        public event EventHandler<CDOEventArgs<T>> AfterUpdate;
+        public event EventHandler<CDOEventArgs<T>> BeforeCreate;
+        public event EventHandler<CDOEventArgs<T>> BeforeDelete;
+        public event EventHandler<CDOEventArgs<T>> BeforeFill;
+        public event EventHandler<CDOEventArgs<T>> BeforeInvoke;
+        public event EventHandler<CDOEventArgs<T>> BeforeRead;
+        public event EventHandler<CDOEventArgs<T>> BeforeSaveChanges;
+        public event EventHandler<CDOEventArgs<T>> BeforeUpdate;
 
         public ICloudDataRecord<T> Record { get; set; }
         public ICloudDataRecord<T> Add()
         {
-            throw new NotImplementedException();
+            return Create();
         }
 
         public ICloudDataRecord<T> Create()
         {
-            throw new NotImplementedException();
+            BeforeCreate?.Invoke(this, new CDOEventArgs<T>() { CDO = this, Session = _cDOSession, Request = null, Record = null });
+
+
+            AfterCreate?.Invoke(this, new CDOEventArgs<T>() { CDO = this, Session = _cDOSession });
+
+            return null;
         }
 
         public ICloudDataRecord<T> Find()
@@ -542,14 +603,38 @@ namespace NCDO.Interfaces
             throw new NotImplementedException();
         }
 
-        #region validation
-        private void VerifyResourceName(string resource)
+        #region private 
+        private void InitCDO()
         {
-            if (!_cDOSession.Services.Any(s => s.Resources.Any(r => r.Name.Equals(resource))))
+            var resourceDefinition = VerifyResourceName(Name);
+
+        }
+        /// <summary>
+        /// Verify is the resource is available and return the catalog definition for the catalog
+        /// </summary>
+        /// <param name="resource"></param>
+        /// <returns></returns>
+        private Resource VerifyResourceName(string resource)
+        {
+            _serviceDefinition = _cDOSession.Services.FirstOrDefault(s => s.Resources.Any(r => r.Name.Equals(resource)));
+            var resourceDefinition = _serviceDefinition?.Resources.FirstOrDefault(r => r.Name.Equals(resource));
+            if (resourceDefinition == null)
             {
                 throw new NotSupportedException($"Invalid resourcename {resource}.");
             }
+            return _resourceDefinition = resourceDefinition;
         }
+        private Operation VerifyOperation(string operation, OperationType operationType = OperationType.Invoke)
+        {
+            var operationDefinition = _resourceDefinition.Operations.FirstOrDefault(o => o.Type == operationType && o.Name.Equals(operation));
+            if (operationDefinition == null)
+            {
+                throw new NotSupportedException($"Invalid {operationType} operation {operation}.");
+            }
+            return operationDefinition;
+        }
+
+
         #endregion
     }
 }

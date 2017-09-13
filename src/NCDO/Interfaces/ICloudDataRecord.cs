@@ -3,14 +3,8 @@ namespace NCDO.Interfaces
     /// <summary>
     /// CloudDataRecord is a record instance for any table stored in the local memory of an associated class instance (CDO).
     /// </summary>
-    public interface ICloudDataRecord<T> where T : class
+    public interface ICloudDataRecord 
     {
-        #region Properties
-        /// <summary>
-        /// The data (field values) for a record.
-        /// </summary>
-        T Data { get; set; }
-        #endregion
         #region Methods
         /// <summary>
         /// Accepts changes to the data in CDO memory for a specified record object.
@@ -43,6 +37,16 @@ namespace NCDO.Interfaces
         /// </summary>
         void RejectRowChanges();
 
+        #endregion
+    }
+
+    public interface ICloudDataRecord<T> : ICloudDataRecord where T : class
+    {
+        #region Properties
+        /// <summary>
+        /// The data (field values) for a record.
+        /// </summary>
+        T Data { get; set; }
         #endregion
     }
 }

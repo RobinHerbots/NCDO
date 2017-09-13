@@ -1,6 +1,7 @@
 using System;
 using NCDO;
 using NCDO.Definitions;
+using System.Json;
 
 namespace NCDOTester
 {
@@ -37,8 +38,21 @@ namespace NCDOTester
             #endregion
 
             var cdo = new CDO("UMUser");
-
             Console.WriteLine($"CDO {cdo.Name} created");
+
+            Console.WriteLine($"CDO {cdo.Name} invoke ValidateLegacyUser");
+
+            var paramObj = new JsonObject
+            {
+                { "pUstaCode", new JsonPrimitive("roh") },
+                { "pUstaPass", new JsonPrimitive("123") }
+            };
+
+            var response = cdo.Invoke("ValidateLegacyUser", paramObj).Result;
+
+            Console.WriteLine($"Success {response.Success}");
+            Console.WriteLine($"Status {response.ResponseMessage.StatusCode}");
+
             Console.ReadKey();
         }
     }
