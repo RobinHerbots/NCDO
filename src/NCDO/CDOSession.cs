@@ -30,7 +30,7 @@ namespace NCDO
         public string UserName { get; private set; }
 
         private readonly Dictionary<Uri, ICDOCatalog> _catalogs = new Dictionary<Uri, ICDOCatalog>();
-        public void OnOpenRequest(HttpClient client, HttpRequestMessage request)
+        public virtual void OnOpenRequest(HttpClient client, HttpRequestMessage request)
         {
             request.Headers.TryAddWithoutValidation("Cache-Control", "no-cache");
             request.Headers.TryAddWithoutValidation("Pragma", "no-cache");

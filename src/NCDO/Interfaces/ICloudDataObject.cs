@@ -260,7 +260,8 @@ namespace NCDO.Interfaces
         /// <returns></returns>
         ICloudDataRecord<T>[] GetData();
 
-        Task ProcessResponse(HttpClient client, HttpResponseMessage response, CDORequest request);
+        Task ProcessCRUDResponse(HttpClient client, HttpResponseMessage response, CDORequest request);
+        Task ProcessInvokeResponse(HttpClient client, HttpResponseMessage response, CDORequest request);
         #endregion
         #region Events
         /// <summary>
@@ -464,47 +465,20 @@ namespace NCDO.Interfaces
         {
             var operationDefinition = VerifyOperation(operation);
             //init request if needed
-            CDORequest cDORequest = new CDORequest
+            var cDORequest = new CDORequest
             {
                 CDO = this,
                 FnName = operationDefinition.Name,
-                ObjParam = _serviceDefinition.UseRequest ? new JsonObject() { { "request", inputObject } } : inputObject
+                ObjParam = _serviceDefinition.UseRequest ? new JsonObject() { { "request", inputObject } } : inputObject,
+                RequestUri = new Uri($"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}{operationDefinition.Path}", UriKind.Absolute),
+                Method = new HttpMethod(operationDefinition.Verb.ToString().ToUpper())
             };
 
             BeforeInvoke?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = cDORequest, Session = _cDOSession });
-
-            using (var client = new HttpClient())
-            {
-                using (var request = new HttpRequestMessage())
-                {
-                    request.Method = new HttpMethod(operationDefinition.Verb.ToString().ToUpper());
-                    //add authentication headers
-                    _cDOSession.OnOpenRequest(client, request);
-                    request.RequestUri = new Uri($"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{operationDefinition.Path}", UriKind.Absolute);
-                    //request body parmaters
-                    request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
-                    var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead);
-                    await ProcessResponse(client, response, cDORequest);
-                }
-            }
-            return cDORequest;
+            return await DoRequest(cDORequest, ProcessInvokeResponse);
         }
 
-        public virtual async Task ProcessResponse(HttpClient client, HttpResponseMessage response, CDORequest request)
-        {
-            request.Success = response.IsSuccessStatusCode;
-            request.ResponseMessage = response;
-            if (response.IsSuccessStatusCode)
-            {
-                using (var dataStream = await response.Content.ReadAsStreamAsync())
-                {
-                    if (dataStream != null)
-                    {
-                        request.Response = (JsonObject)JsonObject.Load(dataStream);
-                    }
-                }
-            }
-        }
+
 
         public void Read()
         {
@@ -557,20 +531,7 @@ namespace NCDO.Interfaces
             throw new NotImplementedException();
         }
 
-        public event EventHandler<CDOEventArgs<T>> AfterCreate;
-        public event EventHandler<CDOEventArgs<T>> AfterDelete;
-        public event EventHandler<CDOEventArgs<T>> AfterFill;
-        public event EventHandler<CDOEventArgs<T>> AfterInvoke;
-        public event EventHandler<CDOEventArgs<T>> AfterRead;
-        public event EventHandler<CDOEventArgs<T>> AfterSaveChanges;
-        public event EventHandler<CDOEventArgs<T>> AfterUpdate;
-        public event EventHandler<CDOEventArgs<T>> BeforeCreate;
-        public event EventHandler<CDOEventArgs<T>> BeforeDelete;
-        public event EventHandler<CDOEventArgs<T>> BeforeFill;
-        public event EventHandler<CDOEventArgs<T>> BeforeInvoke;
-        public event EventHandler<CDOEventArgs<T>> BeforeRead;
-        public event EventHandler<CDOEventArgs<T>> BeforeSaveChanges;
-        public event EventHandler<CDOEventArgs<T>> BeforeUpdate;
+
 
         public ICloudDataRecord<T> Record { get; set; }
         public ICloudDataRecord<T> Add()
@@ -602,11 +563,67 @@ namespace NCDO.Interfaces
         {
             throw new NotImplementedException();
         }
+        #region Events
+        public event EventHandler<CDOEventArgs<T>> AfterCreate;
+        public event EventHandler<CDOEventArgs<T>> AfterDelete;
+        public event EventHandler<CDOEventArgs<T>> AfterFill;
+        public event EventHandler<CDOEventArgs<T>> AfterInvoke;
+        public event EventHandler<CDOEventArgs<T>> AfterRead;
+        public event EventHandler<CDOEventArgs<T>> AfterSaveChanges;
+        public event EventHandler<CDOEventArgs<T>> AfterUpdate;
+        public event EventHandler<CDOEventArgs<T>> BeforeCreate;
+        public event EventHandler<CDOEventArgs<T>> BeforeDelete;
+        public event EventHandler<CDOEventArgs<T>> BeforeFill;
+        public event EventHandler<CDOEventArgs<T>> BeforeInvoke;
+        public event EventHandler<CDOEventArgs<T>> BeforeRead;
+        public event EventHandler<CDOEventArgs<T>> BeforeSaveChanges;
+        public event EventHandler<CDOEventArgs<T>> BeforeUpdate;
+        #endregion
+        #region Request logic
+        public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpClient, HttpResponseMessage, CDORequest, Task> processResponse)
+        {
+            using (var client = new HttpClient())
+            {
+                using (var request = new HttpRequestMessage())
+                {
+                    //add authentication headers
+                    _cDOSession.OnOpenRequest(client, request);
 
+                    //init request from CDORequest
+                    request.Method = cDORequest.Method;
+                    request.RequestUri = cDORequest.RequestUri;
+                    request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
+
+                    var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead);
+                    await processResponse?.Invoke(client, response, cDORequest);
+                }
+            }
+            return cDORequest;
+        }
+        public virtual async Task ProcessInvokeResponse(HttpClient client, HttpResponseMessage response, CDORequest request)
+        {
+            request.Success = response.IsSuccessStatusCode;
+            request.ResponseMessage = response;
+            if (response.IsSuccessStatusCode)
+            {
+                using (var dataStream = await response.Content.ReadAsStreamAsync())
+                {
+                    if (dataStream != null)
+                    {
+                        request.Response = (JsonObject)JsonObject.Load(dataStream);
+                    }
+                }
+            }
+        }
+        public Task ProcessCRUDResponse(HttpClient client, HttpResponseMessage response, CDORequest request)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
         #region private 
         private void InitCDO()
         {
-            var resourceDefinition = VerifyResourceName(Name);
+            VerifyResourceName(Name);
 
         }
         /// <summary>
@@ -633,6 +650,8 @@ namespace NCDO.Interfaces
             }
             return operationDefinition;
         }
+
+
 
 
         #endregion

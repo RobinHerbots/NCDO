@@ -39,19 +39,33 @@ namespace NCDOTester
 
             var cdo = new CDO("UMUser");
             Console.WriteLine($"CDO {cdo.Name} created");
-
-            Console.WriteLine($"CDO {cdo.Name} invoke ValidateLegacyUser");
+            Console.WriteLine($"CDO {cdo.Name} invoke GetLegacyUser");
 
             var paramObj = new JsonObject
+            {
+                { "pUstaCode", new JsonPrimitive("roh") },
+            };
+
+            var resp = cdo.Invoke("GetLegacyUser", paramObj).Result;
+
+            var paramObj2 = new JsonObject
             {
                 { "pUstaCode", new JsonPrimitive("roh") },
                 { "pUstaPass", new JsonPrimitive("123") }
             };
 
-            var response = cdo.Invoke("ValidateLegacyUser", paramObj).Result;
+            Console.WriteLine($"Success {resp.Success}");
+            Console.WriteLine($"Status {resp.ResponseMessage.StatusCode}");
 
-            Console.WriteLine($"Success {response.Success}");
-            Console.WriteLine($"Status {response.ResponseMessage.StatusCode}");
+            Console.WriteLine(resp.Response.ToString());
+
+            Console.WriteLine($"CDO {cdo.Name} invoke ValidateLegacyUser");
+            var resp2 = cdo.Invoke("ValidateLegacyUser", paramObj2).Result;
+
+            Console.WriteLine($"Success {resp2.Success}");
+            Console.WriteLine($"Status {resp2.ResponseMessage.StatusCode}");
+
+            Console.WriteLine(resp2.Response.ToString());
 
             Console.ReadKey();
         }

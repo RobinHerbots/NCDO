@@ -20,5 +20,7 @@ namespace NCDO
         public bool? Success { get; internal set; }
 
         public HttpResponseMessage ResponseMessage { get; internal set; }
+        public  Uri RequestUri { get; internal set;}
+        public HttpMethod Method { get; internal set; }
     }
 }

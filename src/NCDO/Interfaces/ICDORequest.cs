@@ -39,6 +39,10 @@ namespace NCDO.Interfaces
         /// </summary>
         bool? Success { get; }
 
+        #region Passthrough props
         HttpResponseMessage ResponseMessage { get; }
+        Uri RequestUri { get; }
+        HttpMethod Method { get; }
+        #endregion
     }
 }
