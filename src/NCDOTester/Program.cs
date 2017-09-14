@@ -67,6 +67,9 @@ namespace NCDOTester
 
             Console.WriteLine(resp2.Response.ToString());
 
+
+            var resp3 = cdo.Fill().Result;
+            Console.WriteLine(resp3.Response.ToString());
             Console.ReadKey();
         }
     }

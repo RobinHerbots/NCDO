@@ -100,7 +100,7 @@ namespace NCDO.Interfaces
         ///ProDataSet, as returned by the built-in read operation of the
         ///resource for which the CDO is created.
         /// </summary>
-        void Fill();
+        Task<ICDORequest> Fill(QueryRequest queryRequest = null);
         /// <summary>
         /// Returns an array of errors from the most recent CDO
         ///operation.
@@ -154,7 +154,7 @@ namespace NCDO.Interfaces
         ///ProDataSet, as returned by the built-in read operation of the
         ///resource for which the CDO is created.
         /// </summary>
-        void Read();
+        Task<ICDORequest> Read(QueryRequest queryRequest = null);
         /// <summary>
         /// Clears out the data in CDO memory and replaces it with all
         ///the data stored in a specified local storage area, including
@@ -371,7 +371,9 @@ namespace NCDO.Interfaces
         /// <param name="resource">A string expression set to the name of a resource provided by a Cloud Data Service for
         /// which a login session has been started.
         ///</param>
-        protected ACloudDataObject(string resource, ICDOSession cDOSession = null)
+        ///<param name="autoFill">
+        ///Specifies whether the CDO invokes its fill( ) method upon instantiation to initialize CDO memory with data from the resource.</param>
+        protected ACloudDataObject(string resource, ICDOSession cDOSession = null, bool autoFill = false)
         {
             _cDOSession = cDOSession;
             if (_cDOSession == null)
@@ -384,7 +386,8 @@ namespace NCDO.Interfaces
                 }
             }
             Name = resource;
-            InitCDO();
+
+            InitCDO(autoFill);
         }
 
 
@@ -425,10 +428,9 @@ namespace NCDO.Interfaces
             throw new NotImplementedException();
         }
 
-        public void Fill()
+        public async Task<ICDORequest> Fill(QueryRequest queryRequest = null)
         {
-            BeforeFill?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = null });
-            throw new NotImplementedException();
+            return await Read(queryRequest);
         }
 
         public string[] GetErrors()
@@ -475,14 +477,41 @@ namespace NCDO.Interfaces
             };
 
             BeforeInvoke?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = cDORequest, Session = _cDOSession });
-            return await DoRequest(cDORequest, ProcessInvokeResponse);
+            await DoRequest(cDORequest, ProcessInvokeResponse);
+            AfterInvoke?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = cDORequest, Session = _cDOSession });
+
+            return cDORequest;
         }
 
 
 
-        public void Read()
+        public async Task<ICDORequest> Read(QueryRequest queryRequest = null)
         {
-            throw new NotImplementedException();
+            var operationDefinition = VerifyOperation(null, OperationType.Read);
+
+            //setup filter for get request
+            var inputObject = new JsonObject
+            {
+                { "filter", queryRequest }
+            };
+
+            //init request if needed
+            var cDORequest = new CDORequest
+            {
+                CDO = this,
+                FnName = operationDefinition.Name,
+                ObjParam = _serviceDefinition.UseRequest ? new JsonObject() { { "request", inputObject } } : inputObject,
+                RequestUri = new Uri($"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}{operationDefinition.Path}", UriKind.Absolute),
+                Method = new HttpMethod(operationDefinition.Verb.ToString().ToUpper())
+            };
+
+            BeforeFill?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = cDORequest, Session = _cDOSession });
+            BeforeRead?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = cDORequest, Session = _cDOSession });
+            await DoRequest(cDORequest, ProcessCRUDResponse);
+            AfterFill?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = cDORequest, Session = _cDOSession });
+            AfterRead?.Invoke(this, new CDOEventArgs<T> { CDO = this, Request = cDORequest, Session = _cDOSession });
+
+            return cDORequest;
         }
 
         public void ReadLocal()
@@ -592,7 +621,8 @@ namespace NCDO.Interfaces
                     //init request from CDORequest
                     request.Method = cDORequest.Method;
                     request.RequestUri = cDORequest.RequestUri;
-                    request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
+                    if (!cDORequest.Method.Equals(HttpMethod.Get))
+                        request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
 
                     var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead);
                     await processResponse?.Invoke(client, response, cDORequest);
@@ -621,10 +651,11 @@ namespace NCDO.Interfaces
         }
         #endregion
         #region private 
-        private void InitCDO()
+        private void InitCDO(bool autoFill)
         {
             VerifyResourceName(Name);
 
+            if (autoFill) Fill();
         }
         /// <summary>
         /// Verify is the resource is available and return the catalog definition for the catalog
@@ -643,7 +674,7 @@ namespace NCDO.Interfaces
         }
         private Operation VerifyOperation(string operation, OperationType operationType = OperationType.Invoke)
         {
-            var operationDefinition = _resourceDefinition.Operations.FirstOrDefault(o => o.Type == operationType && o.Name.Equals(operation));
+            var operationDefinition = _resourceDefinition.Operations.FirstOrDefault(o => o.Type == operationType && (string.IsNullOrEmpty(operation) || o.Name.Equals(operation)));
             if (operationDefinition == null)
             {
                 throw new NotSupportedException($"Invalid {operationType} operation {operation}.");
