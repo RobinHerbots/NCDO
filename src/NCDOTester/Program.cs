@@ -37,7 +37,7 @@ namespace NCDOTester
             }
             #endregion
 
-            var cdo = new CDO("UMUser");
+            var cdo = new CDO("UMUser", null, true);
             Console.WriteLine($"CDO {cdo.Name} created");
             Console.WriteLine($"CDO {cdo.Name} invoke GetLegacyUser");
 

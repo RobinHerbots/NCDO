@@ -361,7 +361,7 @@ namespace NCDO.Interfaces
         where T : class
     {
         private ICDOSession _cDOSession;
-        private JsonObject _cdoMemory = new JsonObject();
+        private CDOMemory _cdoMemory;
         private Service _serviceDefinition;
         private Resource _resourceDefinition;
 
@@ -490,18 +490,14 @@ namespace NCDO.Interfaces
             var operationDefinition = VerifyOperation(null, OperationType.Read);
 
             //setup filter for get request
-            var inputObject = new JsonObject
-            {
-                { "filter", queryRequest }
-            };
+            var filterpath = queryRequest == null ? "" : operationDefinition.Path.ToString().Replace("{filter}", queryRequest.ToString());
 
             //init request if needed
             var cDORequest = new CDORequest
             {
                 CDO = this,
                 FnName = operationDefinition.Name,
-                ObjParam = _serviceDefinition.UseRequest ? new JsonObject() { { "request", inputObject } } : inputObject,
-                RequestUri = new Uri($"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}{operationDefinition.Path}", UriKind.Absolute),
+                RequestUri = new Uri($"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}{filterpath}", UriKind.Absolute),
                 Method = new HttpMethod(operationDefinition.Verb.ToString().ToUpper())
             };
 
@@ -645,9 +641,21 @@ namespace NCDO.Interfaces
                 }
             }
         }
-        public Task ProcessCRUDResponse(HttpClient client, HttpResponseMessage response, CDORequest request)
+        public virtual async Task ProcessCRUDResponse(HttpClient client, HttpResponseMessage response, CDORequest request)
         {
-            throw new NotImplementedException();
+            await ProcessInvokeResponse(client, response, request);
+            if (request.Success.HasValue && request.Success.Value)
+            {
+                if (request.Method == HttpMethod.Get)
+                {
+                    //init cdoMemory
+                    _cdoMemory = new CDOMemory(request.Response);
+                }
+                else
+                {
+                    //TODO merge changes to cdoMemory or notitfy cdomemory 
+                }
+            }
         }
         #endregion
         #region private 
@@ -655,10 +663,14 @@ namespace NCDO.Interfaces
         {
             VerifyResourceName(Name);
 
-            if (autoFill) Fill();
+            if (autoFill)
+            {
+                Fill().Wait();
+                Console.WriteLine(_cdoMemory.ToString());
+            }
         }
         /// <summary>
-        /// Verify is the resource is available and return the catalog definition for the catalog
+        /// Verify if the resource is available and return the catalog definition for the catalog
         /// </summary>
         /// <param name="resource"></param>
         /// <returns></returns>

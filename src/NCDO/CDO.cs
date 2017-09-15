@@ -11,7 +11,7 @@ namespace NCDO
     /// </summary>
     public class CDO : ACloudDataObject<JsonObject>
     {
-        public CDO(string respource, ICDOSession cDOSession = null) : base(respource, cDOSession)
+        public CDO(string respource, ICDOSession cDOSession = null, bool autoFill = false) : base(respource, cDOSession, autoFill)
         {
         }
     }
