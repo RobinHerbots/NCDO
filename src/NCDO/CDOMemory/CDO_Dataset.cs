@@ -5,12 +5,14 @@ using System.Json;
 using System.Linq;
 using System.Text;
 
-namespace NCDO
+namespace NCDO.CDOMemory
 {
-    public class CDOMemory : JsonObject
+    /// <summary>
+    /// CDO in memory implementation (Dataset)
+    /// </summary>
+    public class CDO_Dataset : JsonObject
     {
-
-        public CDOMemory(IEnumerable<KeyValuePair<string, JsonValue>> items)
+        public CDO_Dataset(IEnumerable<KeyValuePair<string, JsonValue>> items)
         {
             var ds = items.FirstOrDefault();
             if (!string.IsNullOrEmpty(ds.Key))
@@ -19,11 +21,11 @@ namespace NCDO
                 Before = (JsonObject)ds.Value.Get("prods:before");
                 HasChanges = (JsonPrimitive)ds.Value.Get("prods:hasChanges");
                 //Import tables
-                foreach(string key in ((JsonObject)ds.Value).Keys)
+                foreach (string key in ((JsonObject)ds.Value).Keys)
                 {
                     if (!key.StartsWith("prods:"))
                     {
-                        Add(key,ds.Value.Get(key));
+                        Add(key, new CDO_Table((JsonArray) ds.Value.Get(key)));
                     }
                 }
             }
@@ -32,12 +34,12 @@ namespace NCDO
         /// <summary>
         /// Before state 
         /// </summary>
-        public bool HasChanges { get; }
+        public bool HasChanges { get; private set;}
 
         /// <summary>
         /// Before state 
         /// </summary>
-        public JsonObject Before { get; }
+        public JsonObject Before { get; private set;}
 
         /// <summary>
         /// Dataset name

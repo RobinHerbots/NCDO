@@ -7,6 +7,7 @@ using System.Json;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text;
+using NCDO.CDOMemory;
 
 namespace NCDO.Interfaces
 {
@@ -361,7 +362,7 @@ namespace NCDO.Interfaces
         where T : class
     {
         private ICDOSession _cDOSession;
-        private CDOMemory _cdoMemory;
+        private CDO_Dataset _cdoMemory;
         private Service _serviceDefinition;
         private Resource _resourceDefinition;
 
@@ -649,7 +650,7 @@ namespace NCDO.Interfaces
                 if (request.Method == HttpMethod.Get)
                 {
                     //init cdoMemory
-                    _cdoMemory = new CDOMemory(request.Response);
+                    _cdoMemory = new CDO_Dataset(request.Response);
                 }
                 else
                 {
