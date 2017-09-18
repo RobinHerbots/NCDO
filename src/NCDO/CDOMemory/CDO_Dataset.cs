@@ -25,7 +25,7 @@ namespace NCDO.CDOMemory
                 {
                     if (!key.StartsWith("prods:"))
                     {
-                        Add(key, new CDO_Table((JsonArray) ds.Value.Get(key)));
+                        Add(key, new CDO_Table((IEnumerable<JsonObject>) ds.Value.Get(key)));
                     }
                 }
             }
