@@ -5,8 +5,9 @@
     "tasks": [
         {
             "taskName": "build",
-            "command": "dotnet build",
+            "command": "dotnet",
             "args": [
+                "build",
                 "src/NCDO.sln"
             ],
             "type": "shell",

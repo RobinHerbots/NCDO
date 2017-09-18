@@ -1,20 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Json;
 using System.Text;
 
 namespace NCDO.CDOMemory
 {
-    public class CDO_Table : JsonArray
+    public class CDO_Record : JsonObject
     {
-        public CDO_Table(IEnumerable<JsonValue> jsonValue)
+        public CDO_Record(JsonValue jsonValue)
         {
-            AddRange(jsonValue);
+            
         }
 
         public bool HasChanges { get; private set;}
-
-
-        
     }
 }

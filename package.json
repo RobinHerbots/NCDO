@@ -1,0 +1,24 @@
+{
+  "name": "ncdo",
+  "version": "1.0.0",
+  "description": ".NET Implementation of the CloudDataObject (CDO) used by Progress OpenEdge.",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://robin@94.111.118.217:50022/opt/git/NCDO.git"
+  },
+  "keywords": [
+    "CDO",
+    "CloudDataObject",
+    "Progress",
+    "openedge",
+    ".NET"
+  ],
+  "author": "Robin Herbots",
+  "license": "MIT"
+}
