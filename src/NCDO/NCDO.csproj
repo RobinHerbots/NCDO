@@ -3,6 +3,16 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <Configurations>Debug;Release;Staging</Configurations>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Robin Herbots</Authors>
+    <Company />
+    <Description>.NET Implementation of the CloudDataObject (CDO) used by Progress OpenEdge.</Description>
+    <Copyright>Robin Herbots</Copyright>
+    <PackageLicenseUrl>http://opensource.org/licenses/mit-license.php</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/RobinHerbots/NCDO</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/RobinHerbots/NCDO</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>CDO CloudDataObject openedge .NET</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
