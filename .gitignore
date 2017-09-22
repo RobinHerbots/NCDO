@@ -304,5 +304,5 @@ __pycache__/
 # OpenCover UI analysis results
 OpenCover/
 
-NCDOTester
-.vs
+NCDOTester/
+src/.vs/
