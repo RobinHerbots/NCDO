@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "ssh://robin@94.111.118.217:50022/opt/git/NCDO.git"
+    "url": "https://github.com/RobinHerbots/NCDO"
   },
   "keywords": [
     "CDO",
