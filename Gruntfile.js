@@ -7,9 +7,10 @@ module.exports = function (grunt) {
             options: {
                 files: ['package.json'],
                 updateConfigs: ['pkg'],
-                commit: false,
-                createTag: false,
-                push: false
+                commit: true,
+                createTag: true,
+                push: true,
+                pushTo: 'origin'
             }
         },
         msbuild: {
@@ -49,7 +50,6 @@ module.exports = function (grunt) {
 
 // Load the plugin that provides the tasks.
     require('load-grunt-tasks')(grunt);
-    grunt.registerTask('Bump', ["bump"]);
-    grunt.registerTask('Publish', ["tag", "msbuild", "nugetpush"]);
+    grunt.registerTask('Publish', ["bump", "msbuild", "nugetpush"]);
     grunt.registerTask('default', ["availabletasks"]);
 };
