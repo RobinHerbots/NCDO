@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using NCDO.CDOMemory;
 using NCDO.Interfaces;
 
 namespace NCDO
@@ -10,9 +11,11 @@ namespace NCDO
         public ICDOSession Session { get; set; }
         public ICDORequest Request { get; set; }
     }
-    public class CDOEventArgs<T> : CDOEventArgs where T : class
+    public class CDOEventArgs<T, D> : CDOEventArgs 
+        where T : class
+        where D: CDO_Dataset, new()
     {
         public ICloudDataRecord<T> Record { get; set; }
-        public ICloudDataObject<T> CDO { get; internal set; }
+        public ICloudDataObject<T, D> CDO { get; internal set; }
     }
 }

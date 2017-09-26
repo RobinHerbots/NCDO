@@ -13,15 +13,13 @@ using JsonPairEnumerable = System.Collections.Generic.IEnumerable<System.Collect
 
 namespace NCDO.CDOMemory
 {
-    public class CDO_Record : JsonValue, IDictionary<string, JsonValue>, ICollection<JsonPair>
+    public class CDO_Record : JsonObject, IDictionary<string, JsonValue>, ICollection<JsonPair>
     {
         // Use SortedDictionary to make result of ToString() deterministic
-        private readonly SortedDictionary<string, JsonValue> _map;
+        private readonly SortedDictionary<string, JsonValue> _map = new SortedDictionary<string, JsonValue>(StringComparer.Ordinal);
 
         public CDO_Record(params JsonPair[] items)
         {
-            _map = new SortedDictionary<string, JsonValue>(StringComparer.Ordinal);
-
             if (items != null)
             {
                 AddRange(items);
@@ -35,10 +33,13 @@ namespace NCDO.CDOMemory
                 throw new ArgumentNullException(nameof(items));
             }
 
-            _map = new SortedDictionary<string, JsonValue>(StringComparer.Ordinal);
             AddRange(items);
         }
 
+        public CDO_Record() : base()
+        {
+
+        }
 
         public override int Count => _map.Count;
 
@@ -46,7 +47,7 @@ namespace NCDO.CDOMemory
 
         IEnumerator IEnumerable.GetEnumerator() => _map.GetEnumerator();
 
-        public override sealed JsonValue this[string key]
+        public new JsonValue this[string key]
         {
             get { return _map[key]; }
             set { _map[key] = value; }

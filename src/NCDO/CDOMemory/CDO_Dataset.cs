@@ -12,7 +12,18 @@ namespace NCDO.CDOMemory
     /// </summary>
     public class CDO_Dataset : JsonObject
     {
+
+        #region Constructor
+        public CDO_Dataset()
+        {
+        }
         public CDO_Dataset(IEnumerable<KeyValuePair<string, JsonValue>> items)
+        {
+            Init(items);
+        } 
+        #endregion
+
+        internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items)
         {
             var ds = items.FirstOrDefault();
             if (!string.IsNullOrEmpty(ds.Key))
@@ -20,31 +31,36 @@ namespace NCDO.CDOMemory
                 Name = ds.Key;
                 Before = (JsonObject)ds.Value.Get("prods:before");
                 HasChanges = (JsonPrimitive)ds.Value.Get("prods:hasChanges");
-                //Import tables
-                foreach (string key in ((JsonObject)ds.Value).Keys)
+                ImportTables(ds.Value);
+            }
+        }
+
+        public virtual void ImportTables(JsonValue value)
+        {
+            //Import tables
+            foreach (var key in ((JsonObject)value).Keys)
+            {
+                if (!key.StartsWith("prods:"))
                 {
-                    if (!key.StartsWith("prods:"))
-                    {
-                        Add(key, new CDO_Table((IEnumerable<JsonObject>) ds.Value.Get(key)));
-                    }
+                    Add(key, new CDO_Table(((IEnumerable<JsonValue>)  value.Get(key)).Cast<JsonObject>()));
                 }
             }
         }
 
-        /// <summary>
-        /// Before state 
-        /// </summary>
-        public bool HasChanges { get; private set;}
 
         /// <summary>
         /// Before state 
         /// </summary>
-        public JsonObject Before { get; private set;}
+        public bool HasChanges { get; private set; }
+
+        /// <summary>
+        /// Before state 
+        /// </summary>
+        public JsonObject Before { get; private set; }
 
         /// <summary>
         /// Dataset name
         /// </summary>
-        public String Name { get; }
-
+        public String Name { get; private set; }
     }
 }
