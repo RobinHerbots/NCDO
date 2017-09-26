@@ -13,7 +13,6 @@
     <RepositoryUrl>https://github.com/RobinHerbots/NCDO</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>CDO CloudDataObject openedge .NET</PackageTags>
-    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
