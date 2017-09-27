@@ -20,7 +20,7 @@ In your application the usage is simular as in the documentation of JSDO.
   var cdo = new CDO("resource");
   var paramObj = new JsonObject
        {
-          { "name", new JsonPrimitive("name") },
+          { "name", "name" },
        };
   
   var resp = cdo.Invoke("InvokeOperation", paramObj).Result;
