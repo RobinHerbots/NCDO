@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Json;
 using System.Text;
-
+using NCDO.Extensions;
 using JsonPair = System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>;
 using JsonPairEnumerable = System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>>;
 
@@ -18,6 +18,7 @@ namespace NCDO.CDOMemory
         // Use SortedDictionary to make result of ToString() deterministic
         private readonly SortedDictionary<string, JsonValue> _map = new SortedDictionary<string, JsonValue>(StringComparer.Ordinal);
 
+        #region Constructor
         public CDO_Record(params JsonPair[] items)
         {
             if (items != null)
@@ -40,6 +41,18 @@ namespace NCDO.CDOMemory
         {
 
         }
+        #endregion
+
+        #region Internal Properties
+        /// <summary>
+        /// An internal field for the CDO that is provided to find a given record in its memory.
+        /// </summary>
+        internal string _id => this.Get("_id");
+        /// <summary>
+        /// Used by the CDO to do automatic data mapping for any error string passed back from backend with before-imaging data
+        /// </summary>
+        internal string _errorString => this.Get("_errorString");
+        #endregion
 
         public override int Count => _map.Count;
 
