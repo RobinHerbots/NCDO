@@ -308,3 +308,4 @@ NCDOTester/
 src/.vs/
 /src/UserManServiceClient
 [Bb]uild
+*.sln
