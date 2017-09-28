@@ -20,7 +20,7 @@ namespace NCDO.CDOMemory
         public CDO_Dataset(IEnumerable<KeyValuePair<string, JsonValue>> items)
         {
             Init(items);
-        } 
+        }
         #endregion
 
         internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items)
@@ -42,7 +42,8 @@ namespace NCDO.CDOMemory
             {
                 if (!key.StartsWith("prods:"))
                 {
-                    Add(key, new CDO_Table(((IEnumerable<JsonValue>)  value.Get(key)).Cast<JsonObject>()));
+                    if (value.Get(key) is IEnumerable<JsonValue> tTable)
+                        Add(key, new CDO_Table(tTable.Cast<JsonObject>()));
                 }
             }
         }
