@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text;
 using NCDO.CDOMemory;
+using NCDO.Extensions;
 
 namespace NCDO.Interfaces
 {
@@ -640,7 +641,7 @@ namespace NCDO.Interfaces
                 {
                     if (dataStream != null)
                     {
-                        request.Response = (JsonObject)JsonObject.Load(dataStream);
+                        request.Response = (JsonObject)(string.IsNullOrEmpty(request.FnName) ? JsonValue.Load(dataStream) : JsonValue.Load(dataStream).Get("response"));
                     }
                 }
             }

@@ -29,8 +29,8 @@ namespace NCDO.CDOMemory
             if (!string.IsNullOrEmpty(ds.Key))
             {
                 Name = ds.Key;
-                Before = (JsonObject)ds.Value.Get("prods:before");
-                HasChanges = (JsonPrimitive)ds.Value.Get("prods:hasChanges");
+                Before = ds.Value.Get("prods:before") as JsonObject;
+                HasChanges = ds.Value.Get("prods:hasChanges");
                 ImportTables(ds.Value);
             }
         }
