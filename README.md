@@ -8,7 +8,7 @@ The NCDO is a free and open-source implementation that can be used in .NET.
 For more information see the <a href="https://documentation.progress.com/output/pdo">Progress Data Objects Guide and Reference.</a>
 
 ### Usage
-Referece the NCDO nuget package in your project.
+Reference the NCDO nuget package in your project.
 
 In your application the usage is simular as in the documentation of JSDO.
 
