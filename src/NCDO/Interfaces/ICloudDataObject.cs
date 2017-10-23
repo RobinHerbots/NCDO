@@ -7,6 +7,7 @@ using System.Json;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text;
+using System.Threading;
 using NCDO.CDOMemory;
 using NCDO.Extensions;
 
@@ -625,7 +626,7 @@ namespace NCDO.Interfaces
                     if (!cDORequest.Method.Equals(HttpMethod.Get))
                         request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
 
-                    var response = await client.SendAsync(request, HttpCompletionOption.ResponseContentRead);
+                    var response = await client.SendAsync(request,  HttpCompletionOption.ResponseHeadersRead, default(CancellationToken));
                     await processResponse?.Invoke(client, response, cDORequest);
                 }
             }

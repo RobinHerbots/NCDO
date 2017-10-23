@@ -17,6 +17,8 @@ namespace NCDO
     /// </summary>
     public partial class CDOSession : ICDOSession
     {
+        internal HttpClient _httpClient;
+
         #region Constructor
 
         public CDOSession(Uri serviceUri)
@@ -24,6 +26,13 @@ namespace NCDO
             AuthenticationModel = Definitions.AuthenticationModel.AUTH_TYPE_ANON;
             ServiceURI = serviceUri;
             Instance = this; //used by cdo when no session object is passed
+
+            //init httpclient
+            _httpClient = new HttpClient();
+            _httpClient.DefaultRequestHeaders.ConnectionClose = false;
+            _httpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
+            _httpClient.DefaultRequestHeaders.Pragma.Add(NameValueHeaderValue.Parse("no-cache"));
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
         #endregion
 
@@ -32,14 +41,12 @@ namespace NCDO
         private readonly Dictionary<Uri, ICDOCatalog> _catalogs = new Dictionary<Uri, ICDOCatalog>();
         public virtual void OnOpenRequest(HttpClient client, HttpRequestMessage request)
         {
-            request.Headers.TryAddWithoutValidation("Cache-Control", "no-cache");
-            request.Headers.TryAddWithoutValidation("Pragma", "no-cache");
             //add authorization if needed
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
         public async Task AddCatalog(Uri catalogUri, string userName = null, string password = null)
         {
+            ThrowIfDisposed();
             if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password))
             {
                 await Logout();
@@ -53,6 +60,7 @@ namespace NCDO
 
         public async Task AddCatalog(Uri[] catalogUris, string userName = null, string password = null)
         {
+            ThrowIfDisposed();
             foreach (var catalogUri in catalogUris)
             {
                 await AddCatalog(catalogUri, userName, password);
@@ -63,6 +71,7 @@ namespace NCDO
 
         public async Task Login(string userName = null, string password = null)
         {
+            ThrowIfDisposed();
             if (AuthenticationModel != Definitions.AuthenticationModel.AUTH_TYPE_ANON)
             {
                 if (userName == null) throw new ArgumentNullException(nameof(userName));
@@ -72,40 +81,36 @@ namespace NCDO
             UserName = userName;
 
             var urlBuilder = new StringBuilder(ServiceURI.AbsoluteUri);
-            using (var client = new HttpClient())
+            using (var request = new HttpRequestMessage())
             {
-                using (var request = new HttpRequestMessage())
-                {
-                    await PrepareRequest(client, request, urlBuilder);
-                    var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                    await ProcessResponse(client, response);
-                }
+                await PrepareLoginRequest(_httpClient, request, urlBuilder);
+                var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                await ProcessLoginResponse(_httpClient, response);
             }
         }
 
-        public virtual async Task ProcessResponse(HttpClient client, HttpResponseMessage response)
+        public virtual async Task ProcessLoginResponse(HttpClient client, HttpResponseMessage response)
         {
             LoginHttpStatus = response.StatusCode;
         }
 
-        public virtual async Task PrepareRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder)
+        public virtual async Task PrepareLoginRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder)
         {
             urlBuilder.Append(_loginURI);
 
             request.Method = new HttpMethod("GET");
-            request.Headers.TryAddWithoutValidation("Cache-Control", "no-cache");
-            request.Headers.TryAddWithoutValidation("Pragma", "no-cache");
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             request.RequestUri = new Uri(urlBuilder.ToString(), UriKind.RelativeOrAbsolute);
         }
 
         public async Task Logout()
         {
+            ThrowIfDisposed();
             throw new NotImplementedException();
         }
 
         public void Ping()
         {
+            ThrowIfDisposed();
             throw new NotImplementedException();
         }
 
@@ -155,5 +160,33 @@ namespace NCDO
         /// Latest initialized CDOSession
         /// </summary>
         public static ICDOSession Instance { get; internal set; }
+
+        #region IDisposable Support
+        ~CDOSession()
+        {
+            Dispose(false);
+        }
+        private bool _disposed;
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposing || this._disposed)
+                return;
+
+            _httpClient?.Dispose();
+            _disposed = true;
+        }
+        /// <summary>Throws if this class has been disposed.</summary>
+        protected void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(this.GetType().Name);
+        }
+        #endregion
     }
 }

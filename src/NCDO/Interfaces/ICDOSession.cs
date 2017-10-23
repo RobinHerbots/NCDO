@@ -10,7 +10,7 @@ using NCDO.Catalog;
 
 namespace NCDO.Interfaces
 {
-    public interface ICDOSession
+    public interface ICDOSession : IDisposable
     {
         #region Properties
         /// <summary>
@@ -71,7 +71,7 @@ namespace NCDO.Interfaces
         /// </summary>
         /// <param name="client"></param>
         /// <param name="response"></param>
-        Task ProcessResponse(HttpClient client, HttpResponseMessage response);
+        Task ProcessLoginResponse(HttpClient client, HttpResponseMessage response);
 
         /// <summary>
         /// Prepare the login request.  Override to implement basic, form, SSO
@@ -79,7 +79,7 @@ namespace NCDO.Interfaces
         /// <param name="client"></param>
         /// <param name="request"></param>
         /// <param name="urlBuilder"></param>
-        Task PrepareRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder);
+        Task PrepareLoginRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder);
 
         /// <summary>
         /// Used to modify a request object before sending the request object to the server.
@@ -120,6 +120,4 @@ namespace NCDO.Interfaces
 
         #endregion
     }
-
-
 }
