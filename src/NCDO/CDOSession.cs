@@ -17,8 +17,6 @@ namespace NCDO
     /// </summary>
     public partial class CDOSession : ICDOSession
     {
-        internal HttpClient _httpClient;
-
         #region Constructor
 
         public CDOSession(Uri serviceUri)
@@ -28,18 +26,19 @@ namespace NCDO
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
-            _httpClient = new HttpClient();
-            _httpClient.DefaultRequestHeaders.ConnectionClose = false;
-            _httpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
-            _httpClient.DefaultRequestHeaders.Pragma.Add(NameValueHeaderValue.Parse("no-cache"));
-            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            HttpClient = new HttpClient();
+            HttpClient.DefaultRequestHeaders.ConnectionClose = false;
+            HttpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
+            HttpClient.DefaultRequestHeaders.Pragma.Add(NameValueHeaderValue.Parse("no-cache"));
+            HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
         #endregion
 
         public string UserName { get; private set; }
+        public HttpClient HttpClient { get; }
 
         private readonly Dictionary<Uri, ICDOCatalog> _catalogs = new Dictionary<Uri, ICDOCatalog>();
-        public virtual void OnOpenRequest(HttpClient client, HttpRequestMessage request)
+        public virtual void OnOpenRequest(HttpRequestMessage request)
         {
             //add authorization if needed
         }
@@ -83,18 +82,18 @@ namespace NCDO
             var urlBuilder = new StringBuilder(ServiceURI.AbsoluteUri);
             using (var request = new HttpRequestMessage())
             {
-                await PrepareLoginRequest(_httpClient, request, urlBuilder);
-                var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
-                await ProcessLoginResponse(_httpClient, response);
+                await PrepareLoginRequest(request, urlBuilder);
+                var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                await ProcessLoginResponse(response);
             }
         }
 
-        public virtual async Task ProcessLoginResponse(HttpClient client, HttpResponseMessage response)
+        public virtual async Task ProcessLoginResponse(HttpResponseMessage response)
         {
             LoginHttpStatus = response.StatusCode;
         }
 
-        public virtual async Task PrepareLoginRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder)
+        public virtual async Task PrepareLoginRequest(HttpRequestMessage request, StringBuilder urlBuilder)
         {
             urlBuilder.Append(_loginURI);
 
@@ -178,7 +177,7 @@ namespace NCDO
             if (!disposing || this._disposed)
                 return;
 
-            _httpClient?.Dispose();
+            HttpClient?.Dispose();
             _disposed = true;
         }
         /// <summary>Throws if this class has been disposed.</summary>

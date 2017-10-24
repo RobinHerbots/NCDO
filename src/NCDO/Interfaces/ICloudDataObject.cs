@@ -265,8 +265,8 @@ namespace NCDO.Interfaces
         /// <returns></returns>
         ICloudDataRecord<T>[] GetData();
 
-        Task ProcessCRUDResponse(HttpClient client, HttpResponseMessage response, CDORequest request);
-        Task ProcessInvokeResponse(HttpClient client, HttpResponseMessage response, CDORequest request);
+        Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request);
+        Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request);
         #endregion
         #region Events
         /// <summary>
@@ -611,14 +611,12 @@ namespace NCDO.Interfaces
         public event EventHandler<CDOEventArgs<T, D>> BeforeUpdate;
         #endregion
         #region Request logic
-        public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpClient, HttpResponseMessage, CDORequest, Task> processResponse)
+        public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpResponseMessage, CDORequest, Task> processResponse)
         {
-            using (var client = new HttpClient())
-            {
                 using (var request = new HttpRequestMessage())
                 {
                     //add authentication headers
-                    _cDOSession.OnOpenRequest(client, request);
+                    _cDOSession.OnOpenRequest(request);
 
                     //init request from CDORequest
                     request.Method = cDORequest.Method;
@@ -626,13 +624,12 @@ namespace NCDO.Interfaces
                     if (!cDORequest.Method.Equals(HttpMethod.Get))
                         request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
 
-                    var response = await client.SendAsync(request,  HttpCompletionOption.ResponseHeadersRead, default(CancellationToken));
-                    await processResponse?.Invoke(client, response, cDORequest);
+                    var response = await _cDOSession.HttpClient.SendAsync(request,  HttpCompletionOption.ResponseHeadersRead, default(CancellationToken));
+                    await processResponse?.Invoke(response, cDORequest);
                 }
-            }
             return cDORequest;
         }
-        public virtual async Task ProcessInvokeResponse(HttpClient client, HttpResponseMessage response, CDORequest request)
+        public virtual async Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request)
         {
             request.Success = response.IsSuccessStatusCode;
             request.ResponseMessage = response;
@@ -647,9 +644,9 @@ namespace NCDO.Interfaces
                 }
             }
         }
-        public virtual async Task ProcessCRUDResponse(HttpClient client, HttpResponseMessage response, CDORequest request)
+        public virtual async Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request)
         {
-            await ProcessInvokeResponse(client, response, request);
+            await ProcessInvokeResponse(response, request);
             if (request.Success.HasValue && request.Success.Value)
             {
                 if (request.Method == HttpMethod.Get)

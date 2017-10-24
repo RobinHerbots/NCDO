@@ -64,6 +64,8 @@ namespace NCDO.Interfaces
         /// Returns the user ID passed as a parameter to the most recent call to the login( ) method on the current CDOSession object.
         /// </summary>
         string UserName { get; }
+
+        HttpClient HttpClient { get; }
         #endregion
         #region Methods
         /// <summary>
@@ -71,7 +73,7 @@ namespace NCDO.Interfaces
         /// </summary>
         /// <param name="client"></param>
         /// <param name="response"></param>
-        Task ProcessLoginResponse(HttpClient client, HttpResponseMessage response);
+        Task ProcessLoginResponse(HttpResponseMessage response);
 
         /// <summary>
         /// Prepare the login request.  Override to implement basic, form, SSO
@@ -79,7 +81,7 @@ namespace NCDO.Interfaces
         /// <param name="client"></param>
         /// <param name="request"></param>
         /// <param name="urlBuilder"></param>
-        Task PrepareLoginRequest(HttpClient client, HttpRequestMessage request, StringBuilder urlBuilder);
+        Task PrepareLoginRequest(HttpRequestMessage request, StringBuilder urlBuilder);
 
         /// <summary>
         /// Used to modify a request object before sending the request object to the server.
@@ -87,7 +89,7 @@ namespace NCDO.Interfaces
         /// </summary>
         /// <param name="client"></param>
         /// <param name="request"></param>
-        void OnOpenRequest(HttpClient client, HttpRequestMessage request);
+        void OnOpenRequest(HttpRequestMessage request);
 
         /// <summary>
         /// Loads a CDO catalog for a login session established using the login( ) method.
