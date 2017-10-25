@@ -10,14 +10,7 @@ using System.Linq;
 
 namespace NCDO.CDOMemory
 {
-    public class CDO_Table : CDO_Table<CDO_Record>
-    {
-        public CDO_Table(IEnumerable<JsonObject> items) : base(items)
-        {
-        }
-    }
-
-    public abstract class CDO_Table<T> : JsonArray, IList<T> where T : CDO_Record, new()
+    public class CDO_Table<T> : JsonArray, IList<T> where T : CDO_Record, new()
     {
         protected List<T> _list;
 
@@ -140,8 +133,6 @@ namespace NCDO.CDOMemory
             stream.WriteByte((byte)']');
         }
 
-        IEnumerator<T> IEnumerable<T>.GetEnumerator() => _list.GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => _list.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => _list.GetEnumerator();
     }
 }

@@ -5,6 +5,13 @@ namespace NCDO.Interfaces
     /// </summary>
     public interface ICloudDataRecord 
     {
+        #region Properties
+        /// <summary>
+        /// The data (field values) for a record.
+        /// </summary>
+        System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>> Data { get; }
+        #endregion
+
         #region Methods
         /// <summary>
         /// Accepts changes to the data in CDO memory for a specified record object.
@@ -39,14 +46,4 @@ namespace NCDO.Interfaces
 
         #endregion
     }
-
-    public interface ICloudDataRecord<T> : ICloudDataRecord where T : class
-    {
-        #region Properties
-        /// <summary>
-        /// The data (field values) for a record.
-        /// </summary>
-        T Data { get; set; }
-        #endregion
-    }
-}
+} 

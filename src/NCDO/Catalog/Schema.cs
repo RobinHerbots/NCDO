@@ -14,17 +14,17 @@ namespace NCDO.Catalog
             AdditionalProperties = schema.Get("additionalProperties");
             if (schema.ContainsKey("properties"))
             {
-                Properties = new List<DataDefinition>();
+                Properties = new Dictionary<string, DataDefinition>();
                 JsonObject schemaProperties = (JsonObject)schema.Get("properties");
                 foreach (var key in schemaProperties.Keys)
                 {
-                    Properties.Add(new DataDefinition(schemaProperties[key]));
+                    Properties.Add(key, new DataDefinition(schemaProperties[key]));
                 }
             }
         }
 
         public string Type { get; }
         public bool AdditionalProperties { get; }
-        public List<DataDefinition> Properties { get; }
+        public Dictionary<string, DataDefinition> Properties { get; }
     }
 }

@@ -224,6 +224,7 @@ namespace NCDO.Interfaces
         ///current CDO is created.
         ///This can be multiple tables
         /// In case of a gneric CDO this is a reference to the CDO_Dataset
+        /// The CDO_CLientgen generates typed ref to tables
         /// </summary>
         D TableReference { get; }
         /// <summary>
@@ -231,39 +232,39 @@ namespace NCDO.Interfaces
         ///CloudDataRecord object with the data for the
         ///working record of a table referenced in CDO memory.
         /// </summary>
-        ICloudDataRecord<T> Record { get; set; }
+        ICloudDataRecord Record { get; set; }
         #endregion
         #region Methods
         /// <summary>
         /// Creates a new record object for a table referenced in CDO
         ///memory and returns a reference to the new record.
         /// </summary>
-        ICloudDataRecord<T> Add();
+        ICloudDataRecord Add();
         /// <summary>
         /// Creates a new record object for a table referenced in CDO
         ///memory and returns a reference to the new record.
         /// </summary>
-        ICloudDataRecord<T> Create();
+        ICloudDataRecord Create();
         /// <summary>
         /// Searches for a record in a table referenced in CDO memory
         ///and returns a reference to that record if found. If no record
         ///is found, it returns null.
         /// </summary>
         /// <returns></returns>
-        ICloudDataRecord<T> Find();
+        ICloudDataRecord Find();
         /// <summary>
         /// Locates and returns the record in CDO memory with the
         ///internal ID you specify.
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        ICloudDataRecord<T> FindById(string id);
+        ICloudDataRecord FindById(string id);
         /// <summary>
         /// Returns an array of record objects for a table referenced in
         ///CDO memory
         /// </summary>
         /// <returns></returns>
-        ICloudDataRecord<T>[] GetData();
+        ICloudDataRecord[] GetData();
 
         Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request);
         Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request);
@@ -370,6 +371,8 @@ namespace NCDO.Interfaces
         protected D _cdoMemory;
         private Service _serviceDefinition;
         private Resource _resourceDefinition;
+        private string _mainTable;
+        private string _primaryKey;
 
         /// <summary>
         /// CDO Constructor
@@ -561,16 +564,13 @@ namespace NCDO.Interfaces
         {
             throw new NotImplementedException();
         }
-
-
-
-        public ICloudDataRecord<T> Record { get; set; }
-        public ICloudDataRecord<T> Add()
+        public ICloudDataRecord Record { get; set; }
+        public ICloudDataRecord Add()
         {
             return Create();
         }
 
-        public ICloudDataRecord<T> Create()
+        public ICloudDataRecord Create()
         {
             BeforeCreate?.Invoke(this, new CDOEventArgs<T, D>() { CDO = this, Session = _cDOSession, Request = null, Record = null });
 
@@ -580,19 +580,21 @@ namespace NCDO.Interfaces
             return null;
         }
 
-        public ICloudDataRecord<T> Find()
+        public ICloudDataRecord Find()
         {
             throw new NotImplementedException();
         }
 
-        public ICloudDataRecord<T> FindById(string id)
+        public ICloudDataRecord FindById(string id)
         {
-            throw new NotImplementedException();
+            var table = _cdoMemory.Get(_mainTable);
+            return table.Cast<CDO_Record>().FirstOrDefault(r => r.GetId() == id);
         }
 
-        public ICloudDataRecord<T>[] GetData()
+        public ICloudDataRecord[] GetData()
         {
-            throw new NotImplementedException();
+            var table = _cdoMemory.Get(_mainTable);
+            return table.Cast<CDO_Record>().ToArray();
         }
         #region Events
         public event EventHandler<CDOEventArgs<T, D>> AfterCreate;
@@ -613,20 +615,20 @@ namespace NCDO.Interfaces
         #region Request logic
         public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpResponseMessage, CDORequest, Task> processResponse)
         {
-                using (var request = new HttpRequestMessage())
-                {
-                    //add authentication headers
-                    _cDOSession.OnOpenRequest(request);
+            using (var request = new HttpRequestMessage())
+            {
+                //add authentication headers
+                _cDOSession.OnOpenRequest(request);
 
-                    //init request from CDORequest
-                    request.Method = cDORequest.Method;
-                    request.RequestUri = cDORequest.RequestUri;
-                    if (!cDORequest.Method.Equals(HttpMethod.Get))
-                        request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
+                //init request from CDORequest
+                request.Method = cDORequest.Method;
+                request.RequestUri = cDORequest.RequestUri;
+                if (!cDORequest.Method.Equals(HttpMethod.Get))
+                    request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
 
-                    var response = await _cDOSession.HttpClient.SendAsync(request,  HttpCompletionOption.ResponseHeadersRead, default(CancellationToken));
-                    await processResponse?.Invoke(response, cDORequest);
-                }
+                var response = await _cDOSession.HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, default(CancellationToken));
+                await processResponse?.Invoke(response, cDORequest);
+            }
             return cDORequest;
         }
         public virtual async Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request)
@@ -672,6 +674,9 @@ namespace NCDO.Interfaces
                 Fill().Wait();
                 Console.WriteLine(_cdoMemory.ToString());
             }
+            DetermineMainTable();
+            _primaryKey = _resourceDefinition.Schema.Properties.FirstOrDefault().Value.Properties[_mainTable]
+                .PrimaryKey.FirstOrDefault();
         }
         /// <summary>
         /// Verify if the resource is available and return the catalog definition for the catalog
@@ -698,7 +703,18 @@ namespace NCDO.Interfaces
             return operationDefinition;
         }
 
-
+        private void DetermineMainTable()
+        {
+            if (_resourceDefinition.Schema.Properties.FirstOrDefault().Value.Properties.Count == 1)
+            {
+                _mainTable = _resourceDefinition.Schema.Properties.FirstOrDefault().Value.Properties.FirstOrDefault()
+                    .Key;
+            }
+            else
+            {
+                _mainTable = _resourceDefinition.Relations.FirstOrDefault().ParentName;
+            }
+        }
 
 
         #endregion

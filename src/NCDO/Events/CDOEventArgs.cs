@@ -15,7 +15,7 @@ namespace NCDO
         where T : class
         where D: CDO_Dataset, new()
     {
-        public ICloudDataRecord<T> Record { get; set; }
+        public ICloudDataRecord Record { get; set; }
         public ICloudDataObject<T, D> CDO { get; internal set; }
     }
 }

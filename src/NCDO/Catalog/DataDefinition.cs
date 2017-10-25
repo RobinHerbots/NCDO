@@ -1,6 +1,7 @@
 using NCDO.Extensions;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Json;
 using System.Text;
 
@@ -14,17 +15,17 @@ namespace NCDO.Catalog
             AdditionalProperties = dataDefinition.Get("additionalProperties");
             if (dataDefinition.ContainsKey("properties"))
             {
-                Properties = new List<IPropertyDefinition>();
-                JsonObject ddProperties = (JsonObject)dataDefinition.Get("properties");
-                foreach (var key in ddProperties.Keys)
+                Properties = new Dictionary<string, TableDefinition>();
+                JsonObject pdProperties = (JsonObject)dataDefinition.Get("properties");
+                foreach (var key in pdProperties.Keys)
                 {
-                    //Properties.Add(new DataDefinition(ddProperties[key]));
+                    Properties.Add(key ,new TableDefinition(pdProperties[key]));
                 }
             }
         }
 
         public string Type { get; }
         public bool AdditionalProperties { get; }
-        public List<IPropertyDefinition> Properties { get; }
+        public Dictionary<string, TableDefinition> Properties { get; }
     }
 }
