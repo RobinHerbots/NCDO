@@ -74,14 +74,17 @@ namespace NCDO
             if (!string.IsNullOrEmpty(ID))
                 return $"ID={ID}";
 
-            var filter = new JsonObject
-            {
-                {"ablFilter", ABLFilter},
-                {"sqlQuery", ""},
-                {"orderBy", Sort},
-                {"skip", Skip},
-                {"top", Top}
-            };
+            var filter = new JsonObject();
+            if (!string.IsNullOrEmpty(ABLFilter))
+                filter.Add("ablFilter", ABLFilter);
+            if (!string.IsNullOrEmpty(null))
+                filter.Add("sqlQuery", "");
+            if (!string.IsNullOrEmpty(Sort))
+                filter.Add("orderBy", Sort);
+            if (default(int) != Skip)
+                filter.Add("skip", Skip);
+            if (default(int) != Top)
+                filter.Add("top", Top);
 
             return filter.ToString();
 
