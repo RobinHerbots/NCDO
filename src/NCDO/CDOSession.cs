@@ -38,7 +38,7 @@ namespace NCDO
         public HttpClient HttpClient { get; }
 
         private readonly Dictionary<Uri, ICDOCatalog> _catalogs = new Dictionary<Uri, ICDOCatalog>();
-        public virtual void OnOpenRequest(HttpRequestMessage request)
+        public virtual void OnOpenRequest(HttpClient client, HttpRequestMessage request)
         {
             //add authorization if needed
         }

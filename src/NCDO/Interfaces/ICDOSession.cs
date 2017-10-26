@@ -89,7 +89,7 @@ namespace NCDO.Interfaces
         /// </summary>
         /// <param name="client"></param>
         /// <param name="request"></param>
-        void OnOpenRequest(HttpRequestMessage request);
+        void OnOpenRequest(HttpClient client, HttpRequestMessage request);
 
         /// <summary>
         /// Loads a CDO catalog for a login session established using the login( ) method.

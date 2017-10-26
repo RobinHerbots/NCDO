@@ -16,7 +16,7 @@ namespace NCDO.Catalog
             var typeValue = propertyDefinition.Get("type");
             Type = string.IsNullOrEmpty(typeValue) ? typeof(string) : Type.GetType(typeValue);
             ABLType = propertyDefinition.Get("ablType");
-            Default = propertyDefinition.Get("default").ToString();
+            Default = propertyDefinition.Get("default")?.ToString();
             Title = propertyDefinition.Get("title");
             var isRequiredValue = propertyDefinition.Get("required");
             Required = isRequiredValue.JsonType != JsonType.String && (bool) isRequiredValue;
