@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.0.11 - 2017-10-27]
+### updated
+- find & findbyid => typed search
+
 ## [1.0.10 - 2017-10-26]
 ### added
 - find & findbyid

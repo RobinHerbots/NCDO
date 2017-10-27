@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using NCDO.Definitions;
 using System.Json;
 using NCDO.Catalog;
+using NCDO.Events;
 
 namespace NCDO.Interfaces
 {

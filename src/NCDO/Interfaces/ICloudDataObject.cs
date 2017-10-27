@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using NCDO.Catalog;
 using NCDO.CDOMemory;
 using NCDO.Definitions;
+using NCDO.Events;
 using NCDO.Extensions;
 
 namespace NCDO.Interfaces
@@ -58,7 +59,6 @@ namespace NCDO.Interfaces
         bool UseRelationships { get; set; }
 
         #endregion
-
         #region Methods
 
         /// <summary>
@@ -238,40 +238,7 @@ namespace NCDO.Interfaces
         /// </summary>
         void Sort();
 
-        /// <summary>
-        ///     Creates a new record object for a table referenced in CDO
-        ///     memory and returns a reference to the new record.
-        /// </summary>
-        ICloudDataRecord Add();
 
-        /// <summary>
-        ///     Creates a new record object for a table referenced in CDO
-        ///     memory and returns a reference to the new record.
-        /// </summary>
-        ICloudDataRecord Create();
-
-        /// <summary>
-        ///     Searches for a record in a table referenced in CDO memory
-        ///     and returns a reference to that record if found. If no record
-        ///     is found, it returns null.
-        /// </summary>
-        /// <returns></returns>
-        ICloudDataRecord Find(Func<CDO_Record, bool> predicat);
-
-        /// <summary>
-        ///     Locates and returns the record in CDO memory with the
-        ///     internal ID you specify.
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        ICloudDataRecord FindById(string id);
-
-        /// <summary>
-        ///     Returns an array of record objects for a table referenced in
-        ///     CDO memory
-        /// </summary>
-        /// <returns></returns>
-        ICloudDataRecord[] GetData();
 
         Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request);
         Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request);
@@ -282,10 +249,49 @@ namespace NCDO.Interfaces
     /// <summary>
     ///     The CDO provides access to resources in a Cloud Data Service, known as a Cloud Data Resource.
     /// </summary>
-    public interface ICloudDataObject<T, D> : ICloudDataObject
+    public interface ICloudDataObject<T, D, R> : ICloudDataObject
         where T : class
         where D : CDO_Dataset, new()
+        where R : ICloudDataRecord
     {
+
+        #region Methods
+        /// <summary>
+        ///     Creates a new record object for a table referenced in CDO
+        ///     memory and returns a reference to the new record.
+        /// </summary>
+        R Add();
+
+        /// <summary>
+        ///     Creates a new record object for a table referenced in CDO
+        ///     memory and returns a reference to the new record.
+        /// </summary>
+        R Create();
+
+        /// <summary>
+        ///     Searches for a record in a table referenced in CDO memory
+        ///     and returns a reference to that record if found. If no record
+        ///     is found, it returns null.
+        /// </summary>
+        /// <returns></returns>
+        R Find(Func<R, bool> predicat);
+
+        /// <summary>
+        ///     Locates and returns the record in CDO memory with the
+        ///     internal ID you specify.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        R FindById(string id);
+
+        /// <summary>
+        ///     Returns an array of record objects for a table referenced in
+        ///     CDO memory
+        /// </summary>
+        /// <returns></returns>
+        R[] GetData();
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -303,7 +309,7 @@ namespace NCDO.Interfaces
         ///     CloudDataRecord object with the data for the
         ///     working record of a table referenced in CDO memory.
         /// </summary>
-        ICloudDataRecord Record { get; set; }
+        R Record { get; set; }
 
         #endregion
 
@@ -315,7 +321,7 @@ namespace NCDO.Interfaces
         ///     create a record and receives a response to this request
         ///     from the Cloud Data Server.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> AfterCreate;
+        event EventHandler<CDOEventArgs<T, D, R>> AfterCreate;
 
         /// <summary>
         ///     Fires after the CDO, by means of a saveChanges( ) call
@@ -323,7 +329,7 @@ namespace NCDO.Interfaces
         ///     record and receives a response to this request from the
         ///     Cloud Data Server.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> AfterDelete;
+        event EventHandler<CDOEventArgs<T, D, R>> AfterDelete;
 
         /// <summary>
         ///     Fires after the CDO, by means of a fill( ) call, sends a
@@ -331,14 +337,14 @@ namespace NCDO.Interfaces
         ///     and receives a response to this request from the Cloud Data
         ///     Server.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> AfterFill;
+        event EventHandler<CDOEventArgs<T, D, R>> AfterFill;
 
         /// <summary>
         ///     Fires after a non-built-in method is called asynchronously
         ///     on a CDO and a response to the request is received from
         ///     the Cloud Data Server.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> AfterInvoke;
+        event EventHandler<CDOEventArgs<T, D, R>> AfterInvoke;
 
         /// <summary>
         ///     Fires after the CDO, by means of a read( ) call, sends a
@@ -346,14 +352,14 @@ namespace NCDO.Interfaces
         ///     and receives a response to this request from the Cloud Data
         ///     Server.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> AfterRead;
+        event EventHandler<CDOEventArgs<T, D, R>> AfterRead;
 
         /// <summary>
         ///     Fires once for each call to the saveChanges( ) method
         ///     on a CDO, after responses to all create, update, and delete
         ///     requests have been received from the Cloud Data Server.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> AfterSaveChanges;
+        event EventHandler<CDOEventArgs<T, D, R>> AfterSaveChanges;
 
         /// <summary>
         ///     Fires after the CDO, by means of a saveChanges( ) call
@@ -361,63 +367,64 @@ namespace NCDO.Interfaces
         ///     to update a record and receives a response to this
         ///     request from the Cloud Data Server.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> AfterUpdate;
+        event EventHandler<CDOEventArgs<T, D, R>> AfterUpdate;
 
         /// <summary>
         ///     Fires before the CDO, by means of a saveChanges( )
         ///     call making an add( ) or create() call, sends a request the
         ///     Cloud Data Server to create a record.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> BeforeCreate;
+        event EventHandler<CDOEventArgs<T, D, R>> BeforeCreate;
 
         /// <summary>
         ///     Fires before the CDO, by means of a saveChanges( )
         ///     call making a remove( ) call, sends a request the
         ///     Cloud Data Server to delete a record.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> BeforeDelete;
+        event EventHandler<CDOEventArgs<T, D, R>> BeforeDelete;
 
         /// <summary>
         ///     Fires before the CDO, by means of a fill( ) call, sends
         ///     a request to the Cloud Data Server to read a table or
         ///     ProDataSet into CDO memory.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> BeforeFill;
+        event EventHandler<CDOEventArgs<T, D, R>> BeforeFill;
 
         /// <summary>
         ///     Fires when a non-built-in method is called asynchronously
         ///     on a CDO, before the request for the operation is sent to
         ///     the Cloud Data Server.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> BeforeInvoke;
+        event EventHandler<CDOEventArgs<T, D, R>> BeforeInvoke;
 
         /// <summary>
         ///     Fires before the CDO, by means of a read( ) call, sends
         ///     a request to the Cloud Data Server to read a table or
         ///     ProDataSet into CDO memory.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> BeforeRead;
+        event EventHandler<CDOEventArgs<T, D, R>> BeforeRead;
 
         /// <summary>
         ///     Fires once for each call to the saveChanges( ) method
         ///     on a CDO, before any create, update, or delete requests
         ///     are sent to the Cloud Data Server.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> BeforeSaveChanges;
+        event EventHandler<CDOEventArgs<T, D, R>> BeforeSaveChanges;
 
         /// <summary>
         ///     Fires before the CDO, by means of a saveChanges( )
         ///     call making an assign( ) or update() call, sends a
         ///     request the Cloud Data Server to update a record.
         /// </summary>
-        event EventHandler<CDOEventArgs<T, D>> BeforeUpdate;
+        event EventHandler<CDOEventArgs<T, D, R>> BeforeUpdate;
 
         #endregion
     }
 
-    public abstract class ACloudDataObject<T, D> : ICloudDataObject<T, D>
+    public abstract class ACloudDataObject<T, D, R> : ICloudDataObject<T, D, R>
         where T : class
         where D : CDO_Dataset, new()
+        where R : class, ICloudDataRecord
     {
         private readonly ICDOSession _cDOSession;
         protected D _cdoMemory;
@@ -460,7 +467,7 @@ namespace NCDO.Interfaces
         public string Name { get; }
         public bool UseRelationships { get; set; }
 
-        public ICloudDataRecord Record { get; set; }
+        public R Record { get; set; }
 
         public D TableReference => _cdoMemory;
 
@@ -473,7 +480,7 @@ namespace NCDO.Interfaces
             return true;
         }
 
-        public ICloudDataRecord Add()
+        public R Add()
         {
             return Create();
         }
@@ -493,13 +500,12 @@ namespace NCDO.Interfaces
             throw new NotImplementedException();
         }
 
-        public ICloudDataRecord Create()
+        public R Create()
         {
-            BeforeCreate?.Invoke(this,
-                new CDOEventArgs<T, D> { CDO = this, Session = _cDOSession, Request = null, Record = null });
+            BeforeCreate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Session = _cDOSession, Request = null, Record = null });
 
 
-            AfterCreate?.Invoke(this, new CDOEventArgs<T, D> { CDO = this, Session = _cDOSession });
+            AfterCreate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Session = _cDOSession });
 
             return null;
         }
@@ -519,23 +525,21 @@ namespace NCDO.Interfaces
             return await Read(filter);
         }
 
-        public ICloudDataRecord Find(Func<CDO_Record, bool> predicate)
+        public R Find(Func<R, bool> predicate)
         {
             var table = _cdoMemory?.Get(_mainTable);
-            if (table?.JsonType == JsonType.Array)
-                table.Cast<CDO_Record>().FirstOrDefault(predicate);
-            return null;
+            return table?.JsonType == JsonType.Array ? table.Cast<R>().FirstOrDefault(predicate) : null;
         }
 
-        public ICloudDataRecord FindById(string id)
+        public R FindById(string id)
         {
             return Find(r => r.GetId() == id);
         }
 
-        public ICloudDataRecord[] GetData()
+        public R[] GetData()
         {
             var table = _cdoMemory?.Get(_mainTable);
-            return table?.Cast<CDO_Record>().ToArray();
+            return table?.Cast<R>().ToArray();
         }
 
         public string[] GetErrors()
@@ -585,9 +589,9 @@ namespace NCDO.Interfaces
             };
 
             BeforeInvoke?.Invoke(this,
-                new CDOEventArgs<T, D> { CDO = this, Request = cDORequest, Session = _cDOSession });
+                new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             await DoRequest(cDORequest, ProcessInvokeResponse);
-            AfterInvoke?.Invoke(this, new CDOEventArgs<T, D> { CDO = this, Request = cDORequest, Session = _cDOSession });
+            AfterInvoke?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
 
             return cDORequest;
         }
@@ -618,11 +622,11 @@ namespace NCDO.Interfaces
                 Method = new HttpMethod(operationDefinition.Verb.ToString().ToUpper())
             };
 
-            BeforeFill?.Invoke(this, new CDOEventArgs<T, D> { CDO = this, Request = cDORequest, Session = _cDOSession });
-            BeforeRead?.Invoke(this, new CDOEventArgs<T, D> { CDO = this, Request = cDORequest, Session = _cDOSession });
+            BeforeFill?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
+            BeforeRead?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             await DoRequest(cDORequest, ProcessCRUDResponse);
-            AfterFill?.Invoke(this, new CDOEventArgs<T, D> { CDO = this, Request = cDORequest, Session = _cDOSession });
-            AfterRead?.Invoke(this, new CDOEventArgs<T, D> { CDO = this, Request = cDORequest, Session = _cDOSession });
+            AfterFill?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
+            AfterRead?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
 
             return cDORequest;
         }
@@ -649,7 +653,7 @@ namespace NCDO.Interfaces
 
         public void SaveChanges()
         {
-            BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D> { CDO = this, Request = null });
+            BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
             throw new NotImplementedException();
         }
 
@@ -675,20 +679,20 @@ namespace NCDO.Interfaces
 
         #region Events
 
-        public event EventHandler<CDOEventArgs<T, D>> AfterCreate;
-        public event EventHandler<CDOEventArgs<T, D>> AfterDelete;
-        public event EventHandler<CDOEventArgs<T, D>> AfterFill;
-        public event EventHandler<CDOEventArgs<T, D>> AfterInvoke;
-        public event EventHandler<CDOEventArgs<T, D>> AfterRead;
-        public event EventHandler<CDOEventArgs<T, D>> AfterSaveChanges;
-        public event EventHandler<CDOEventArgs<T, D>> AfterUpdate;
-        public event EventHandler<CDOEventArgs<T, D>> BeforeCreate;
-        public event EventHandler<CDOEventArgs<T, D>> BeforeDelete;
-        public event EventHandler<CDOEventArgs<T, D>> BeforeFill;
-        public event EventHandler<CDOEventArgs<T, D>> BeforeInvoke;
-        public event EventHandler<CDOEventArgs<T, D>> BeforeRead;
-        public event EventHandler<CDOEventArgs<T, D>> BeforeSaveChanges;
-        public event EventHandler<CDOEventArgs<T, D>> BeforeUpdate;
+        public event EventHandler<CDOEventArgs<T, D, R>> AfterCreate;
+        public event EventHandler<CDOEventArgs<T, D, R>> AfterDelete;
+        public event EventHandler<CDOEventArgs<T, D, R>> AfterFill;
+        public event EventHandler<CDOEventArgs<T, D, R>> AfterInvoke;
+        public event EventHandler<CDOEventArgs<T, D, R>> AfterRead;
+        public event EventHandler<CDOEventArgs<T, D, R>> AfterSaveChanges;
+        public event EventHandler<CDOEventArgs<T, D, R>> AfterUpdate;
+        public event EventHandler<CDOEventArgs<T, D, R>> BeforeCreate;
+        public event EventHandler<CDOEventArgs<T, D, R>> BeforeDelete;
+        public event EventHandler<CDOEventArgs<T, D, R>> BeforeFill;
+        public event EventHandler<CDOEventArgs<T, D, R>> BeforeInvoke;
+        public event EventHandler<CDOEventArgs<T, D, R>> BeforeRead;
+        public event EventHandler<CDOEventArgs<T, D, R>> BeforeSaveChanges;
+        public event EventHandler<CDOEventArgs<T, D, R>> BeforeUpdate;
 
         #endregion
 
@@ -753,7 +757,6 @@ namespace NCDO.Interfaces
             if (autoFill)
             {
                 Fill().Wait();
-                Console.WriteLine(_cdoMemory.ToString());
             }
             DetermineMainTable();
             _primaryKey = _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties[_mainTable]

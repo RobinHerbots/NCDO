@@ -9,6 +9,7 @@ using NCDO.Definitions;
 using NCDO.Interfaces;
 using System.Json;
 using NCDO.Catalog;
+using NCDO.Events;
 
 namespace NCDO
 {
