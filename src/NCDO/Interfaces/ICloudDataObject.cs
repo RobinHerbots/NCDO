@@ -110,7 +110,14 @@ namespace NCDO.Interfaces
         ///     resource for which the CDO is created.
         /// </summary>
         Task<ICDORequest> Fill(QueryRequest queryRequest = null);
+        /// <summary>
+        ///     Initializes CDO memory with record objects from the data
+        ///     records in a single table, or in one or more tables of a
+        ///     ProDataSet, as returned by the built-in read operation of the
+        ///     resource for which the CDO is created.
+        /// </summary>
         Task<ICDORequest> Fill(string filter);
+
 
         /// <summary>
         ///     Returns an array of errors from the most recent CDO
@@ -173,7 +180,12 @@ namespace NCDO.Interfaces
         ///     resource for which the CDO is created.
         /// </summary>
         Task<ICDORequest> Read(QueryRequest queryRequest = null);
-
+        /// <summary>
+        ///     Initializes CDO memory with record objects from the data
+        ///     records in a single table, or in one or more tables of a
+        ///     ProDataSet, as returned by the built-in read operation of the
+        ///     resource for which the CDO is created.
+        /// </summary>
         Task<ICDORequest> Read(string filter);
 
         /// <summary>
@@ -270,6 +282,14 @@ namespace NCDO.Interfaces
         R Create();
 
         /// <summary>
+        ///     Initializes CDO memory with record objects from the data
+        ///     records in a single table, or in one or more tables of a
+        ///     ProDataSet, as returned by the built-in read operation of the
+        ///     resource for which the CDO is created.
+        /// </summary>
+        Task<ICDORequest> Fill(Expression<Func<R, bool>> filter);
+
+        /// <summary>
         ///     Searches for a record in a table referenced in CDO memory
         ///     and returns a reference to that record if found. If no record
         ///     is found, it returns null.
@@ -291,6 +311,13 @@ namespace NCDO.Interfaces
         /// </summary>
         /// <returns></returns>
         R[] GetData();
+        /// <summary>
+        ///     Initializes CDO memory with record objects from the data
+        ///     records in a single table, or in one or more tables of a
+        ///     ProDataSet, as returned by the built-in read operation of the
+        ///     resource for which the CDO is created.
+        /// </summary>
+        Task<ICDORequest> Read(Expression<Func<R, bool>> filter);
         #endregion
 
         #region Properties
@@ -526,10 +553,23 @@ namespace NCDO.Interfaces
             return await Read(filter);
         }
 
+        public async Task<ICDORequest> Fill(Expression<Func<R, bool>> filter)
+        {
+            return await Fill(new QueryRequest() {ABLFilter = filter.ToABLFIlter()});
+        }
+
         public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false)
         {
             var table = _cdoMemory?.Get(_mainTable);
-            R record = (table?.JsonType == JsonType.Array ? table.Cast<R>().FirstOrDefault(filter.Compile()) : null) ?? (autoFetch ? await Fill(new QueryRequest() { ABLFilter = filter.ToABLFIlter() }) as R : null);
+            R record = null;
+            if (table?.JsonType == JsonType.Array)
+                record = table.Cast<R>().FirstOrDefault(filter.Compile());
+
+            if (record == null && autoFetch)
+            {
+                await Fill(filter);
+                record = await Find(filter);
+            }
 
             return record;
         }
@@ -634,6 +674,10 @@ namespace NCDO.Interfaces
             return cDORequest;
         }
 
+        public async Task<ICDORequest> Read(Expression<Func<R, bool>> filter)
+        {
+            return await Read(new QueryRequest() { ABLFilter = filter.ToABLFIlter() });
+        }
         public void ReadLocal()
         {
             throw new NotImplementedException();
