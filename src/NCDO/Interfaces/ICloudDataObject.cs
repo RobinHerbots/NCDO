@@ -1,6 +1,7 @@
 using System;
 using System.Json;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -274,7 +275,7 @@ namespace NCDO.Interfaces
         ///     is found, it returns null.
         /// </summary>
         /// <returns></returns>
-        R Find(Func<R, bool> predicat);
+        Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch);
 
         /// <summary>
         ///     Locates and returns the record in CDO memory with the
@@ -282,7 +283,7 @@ namespace NCDO.Interfaces
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        R FindById(string id);
+        Task<R> FindById(string id, bool autoFetch);
 
         /// <summary>
         ///     Returns an array of record objects for a table referenced in
@@ -525,15 +526,17 @@ namespace NCDO.Interfaces
             return await Read(filter);
         }
 
-        public R Find(Func<R, bool> predicate)
+        public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false)
         {
             var table = _cdoMemory?.Get(_mainTable);
-            return table?.JsonType == JsonType.Array ? table.Cast<R>().FirstOrDefault(predicate) : null;
+            R record = (table?.JsonType == JsonType.Array ? table.Cast<R>().FirstOrDefault(filter.Compile()) : null) ?? (autoFetch ? await Fill(new QueryRequest() { ABLFilter = filter.ToABLFIlter() }) as R : null);
+
+            return record;
         }
 
-        public R FindById(string id)
+        public async Task<R> FindById(string id, bool autoFetch = false)
         {
-            return Find(r => r.GetId() == id);
+            return await Find(r => r.GetId() == id, autoFetch);
         }
 
         public R[] GetData()
