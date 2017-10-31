@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.0.13 - 2017-10-31]
+### updated
+- add missing Comparison operators to ablfilter
+
 ## [1.0.12 - 2017-10-31]
 ### updated
 - extend find & findbyid with autoFetch parameter
