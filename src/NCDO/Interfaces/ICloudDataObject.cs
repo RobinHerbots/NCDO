@@ -787,8 +787,11 @@ namespace NCDO.Interfaces
             if (request.Success.HasValue && request.Success.Value)
                 if (request.Method == HttpMethod.Get)
                 {
-                    //init cdoMemory
-                    _cdoMemory = new D();
+                    if (_cdoMemory == null)
+                    {
+                        //init cdoMemory
+                        _cdoMemory = new D();
+                    }
                     _cdoMemory.Init(request.Response);
                 }
         }

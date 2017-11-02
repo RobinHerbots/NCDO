@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Json;
 using System.Linq;
 using System.Text;
+using NCDO.Interfaces;
 
 namespace NCDO.CDOMemory
 {
@@ -35,7 +36,7 @@ namespace NCDO.CDOMemory
             }
         }
 
-        public virtual void ImportTables(JsonValue value)
+        protected internal virtual void ImportTables(JsonValue value)
         {
             //Import tables
             foreach (var key in ((JsonObject)value).Keys)
@@ -43,11 +44,15 @@ namespace NCDO.CDOMemory
                 if (!key.StartsWith("prods:"))
                 {
                     if (value.Get(key) is IEnumerable<JsonValue> tTable)
-                        Add(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
+                        Join<CDO_Record>(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
                 }
             }
         }
 
+        protected void Join<R>(string key, CDO_Table<R> value) where R : CDO_Record, new()
+        {
+            if (!ContainsKey(key)) Add(key, value); else ((CDO_Table<R>)this[key]).AddRange(value);
+        }
 
         /// <summary>
         /// Before state 

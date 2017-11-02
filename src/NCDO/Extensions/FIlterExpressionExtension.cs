@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
+using System.Reflection;
 using System.Text;
 
 namespace NCDO.Extensions
@@ -14,7 +15,7 @@ namespace NCDO.Extensions
             return ToString(filterExpression.Body);
         }
 
-        private static string ToString(Expression expression)
+        private static string ToString(Expression expression, bool valueParameter = false)
         {
             BinaryExpression be;
             switch (expression.NodeType)
@@ -24,35 +25,49 @@ namespace NCDO.Extensions
                     switch (mc?.Method.Name)
                     {
                         case "Equals":
-                            return $"{ToString(mc?.Object)} = {ToString(mc?.Arguments.FirstOrDefault())}";
+                            return $"{ToString(mc?.Object)} = {ToString(mc?.Arguments.FirstOrDefault(), true)}";
                         case "StartsWith":
-                            return $"{ToString(mc?.Object)} BEGINS {ToString(mc?.Arguments.FirstOrDefault())}";
+                            return $"{ToString(mc?.Object)} BEGINS {ToString(mc?.Arguments.FirstOrDefault(), true)}";
                         case "Contains":
-                            return $"{ToString(mc?.Object)} MATCHES '*{ToString(mc?.Arguments.FirstOrDefault()).Trim('\'')}*'";
+                            return $"{ToString(mc?.Object)} MATCHES '*{ToString(mc?.Arguments.FirstOrDefault(), true).Trim('\'')}*'";
                     }
                     throw new NotSupportedException($"ToABLFIlter {expression.NodeType} {mc?.Method.Name}");
                 case ExpressionType.Constant:
-                    return expression.ToString().Replace('"', '\'');
+                    return expression.ToString().Replace("\"", valueParameter ? "'" : string.Empty);
                 case ExpressionType.Equal:
                     be = expression as BinaryExpression;
-                    return $"{ToString(be?.Left)} = {ToString(be?.Right)}";
+                    return $"{ToString(be?.Left)} = {ToString(be?.Right, true)}";
                 case ExpressionType.GreaterThan:
                     be = expression as BinaryExpression;
-                    return $"{ToString(be?.Left)} > {ToString(be?.Right)}";
+                    return $"{ToString(be?.Left)} > {ToString(be?.Right, true)}";
                 case ExpressionType.GreaterThanOrEqual:
                     be = expression as BinaryExpression;
-                    return $"{ToString(be?.Left)} >= {ToString(be?.Right)}";
+                    return $"{ToString(be?.Left)} >= {ToString(be?.Right, true)}";
                 case ExpressionType.MemberAccess:
-                    return ((MemberExpression)expression).Member.Name;
+                    var me = expression as MemberExpression;
+                    if (me?.Expression != null && me.Expression.NodeType == ExpressionType.Parameter)
+                    {
+                        return me.Member.Name.Replace("\"", valueParameter ? "'" : string.Empty);
+                    }
+                    switch (me?.Member)
+                    {
+                        case FieldInfo _:
+                            var fieldValue = ((FieldInfo)me.Member).GetValue(ResolveMember(me)).ToString();
+                            return valueParameter ? $"'{fieldValue}'" : fieldValue;
+                        case PropertyInfo _:
+                            var propValue = ((PropertyInfo)me.Member).GetValue(ResolveMember(me)).ToString();
+                            return valueParameter ? $"'{propValue}'" : propValue;
+                    }
+                    throw new NotSupportedException($"ToABLFIlter {expression.NodeType}");
                 case ExpressionType.NotEqual:
                     be = expression as BinaryExpression;
-                    return $"{ToString(be?.Left)} <> {ToString(be?.Right)}";
+                    return $"{ToString(be?.Left)} <> {ToString(be?.Right, true)}";
                 case ExpressionType.LessThan:
                     be = expression as BinaryExpression;
-                    return $"{ToString(be?.Left)} < {ToString(be?.Right)}";
+                    return $"{ToString(be?.Left)} < {ToString(be?.Right, true)}";
                 case ExpressionType.LessThanOrEqual:
                     be = expression as BinaryExpression;
-                    return $"{ToString(be?.Left)} <= {ToString(be?.Right)}";
+                    return $"{ToString(be?.Left)} <= {ToString(be?.Right, true)}";
                 case ExpressionType.OrElse:
                     be = expression as BinaryExpression;
                     return $"{ToString(be?.Left)} OR {ToString(be?.Right)}";
@@ -62,6 +77,25 @@ namespace NCDO.Extensions
                 default:
                     throw new NotSupportedException($"ToABLFIlter {expression.NodeType}");
             }
+        }
+
+        private static object ResolveMember(MemberExpression exp, bool memberResolve = false)
+        {
+            switch (exp?.Expression?.NodeType)
+            {
+                case ExpressionType.MemberAccess:
+                    return ResolveMember(exp.Expression as MemberExpression, true);
+                case ExpressionType.Constant:
+                    if (memberResolve)
+                    {
+                        if (exp.Member is FieldInfo info)
+                            return info.GetValue((exp.Expression as ConstantExpression)?.Value);
+                        if (exp.Member is PropertyInfo propertyInfo)
+                            return propertyInfo.GetValue((exp.Expression as ConstantExpression)?.Value);
+                    }
+                    return (exp.Expression as ConstantExpression)?.Value;
+            }
+            return exp;
         }
     }
 }
