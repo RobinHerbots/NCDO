@@ -1,8 +1,14 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.15 - 2017-11-06]
+### added
+- version prop in cdosession
+### updated
+- allow joining of records in memory
+
 ## [0.0.14 - 2017-11-02]
-### update
+### updated
 - improve inmemory data
 
 ## [1.0.13 - 2017-10-31]
