@@ -52,7 +52,11 @@ namespace NCDO.CDOMemory
             _list.Clear();
         }
 
-        public bool Contains(T item) => _list.Contains(item);
+        public bool Contains(T item)
+        {
+            var itemId = item.GetId();
+            return _list.Any(i => i.GetId() == itemId);
+        }
 
         public void CopyTo(T[] array, int arrayIndex)
         {
@@ -63,7 +67,11 @@ namespace NCDO.CDOMemory
 
         public IEnumerator<T> GetEnumerator() => _list.GetEnumerator();
 
-        public int IndexOf(T item) => _list.IndexOf(item);
+        public int IndexOf(T item)
+        {
+            var itemId = item.GetId();
+            return _list.FindIndex(i => i.GetId() == itemId);
+        }
 
         public void Insert(int index, T item)
         {
@@ -89,14 +97,14 @@ namespace NCDO.CDOMemory
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
-
             _list.AddRange(items);
         }
 
         public void AddRange(params T[] items)
         {
-            if (items != null)
-                _list.AddRange(items);
+            if (items == null)
+                throw new ArgumentNullException(nameof(items));
+            _list.AddRange(items);
         }
 
         public override void Save(Stream stream)
@@ -104,7 +112,7 @@ namespace NCDO.CDOMemory
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            stream.WriteByte((byte) '[');
+            stream.WriteByte((byte)'[');
 
             for (var i = 0; i < _list.Count; i++)
             {
@@ -115,20 +123,20 @@ namespace NCDO.CDOMemory
                 }
                 else
                 {
-                    stream.WriteByte((byte) 'n');
-                    stream.WriteByte((byte) 'u');
-                    stream.WriteByte((byte) 'l');
-                    stream.WriteByte((byte) 'l');
+                    stream.WriteByte((byte)'n');
+                    stream.WriteByte((byte)'u');
+                    stream.WriteByte((byte)'l');
+                    stream.WriteByte((byte)'l');
                 }
 
                 if (i < Count - 1)
                 {
-                    stream.WriteByte((byte) ',');
-                    stream.WriteByte((byte) ' ');
+                    stream.WriteByte((byte)',');
+                    stream.WriteByte((byte)' ');
                 }
             }
 
-            stream.WriteByte((byte) ']');
+            stream.WriteByte((byte)']');
         }
     }
 }

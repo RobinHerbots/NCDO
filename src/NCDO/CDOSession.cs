@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -8,6 +9,7 @@ using System.Threading.Tasks;
 using NCDO.Definitions;
 using NCDO.Interfaces;
 using System.Json;
+using System.Reflection;
 using NCDO.Catalog;
 using NCDO.Events;
 
@@ -160,6 +162,20 @@ namespace NCDO
         /// Latest initialized CDOSession
         /// </summary>
         public static ICDOSession Instance { get; internal set; }
+
+        /// <summary>
+        /// Returns the version of NCDO
+        /// Can be used by the clientgen to see if the ncdo version is supported.
+        /// </summary>
+        public static string Version
+        {
+            get
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                var fileVersionInfo = FileVersionInfo.GetVersionInfo(assembly.Location);
+                return fileVersionInfo.ProductVersion;
+            }
+        }
 
         #region IDisposable Support
         ~CDOSession()

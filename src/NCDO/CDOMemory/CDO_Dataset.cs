@@ -51,7 +51,22 @@ namespace NCDO.CDOMemory
 
         protected void Join<R>(string key, CDO_Table<R> value) where R : CDO_Record, new()
         {
-            if (!ContainsKey(key)) Add(key, value); else ((CDO_Table<R>)this[key]).AddRange(value);
+            if (!ContainsKey(key)) Add(key, value);
+            else
+            {
+                CDO_Table<R> table = (CDO_Table<R>)this[key];
+                foreach (R record in value)
+                {
+                    if (!table.Contains(record))
+                        table.Add(record);
+                    else
+                    {
+                        var index = table.IndexOf(record);
+                        var existing = table[index];
+                        existing.Merge(record);
+                    }
+                }
+            }
         }
 
         /// <summary>
