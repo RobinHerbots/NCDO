@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Json;
 using System.Linq;
 using System.Text;
+using NCDO.Definitions;
 using NCDO.Interfaces;
 
 namespace NCDO.CDOMemory
@@ -44,27 +45,20 @@ namespace NCDO.CDOMemory
                 if (!key.StartsWith("prods:"))
                 {
                     if (value.Get(key) is IEnumerable<JsonValue> tTable)
-                        Join<CDO_Record>(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
+                        Add<CDO_Record>(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
                 }
             }
         }
 
-        protected void Join<R>(string key, CDO_Table<R> value) where R : CDO_Record, new()
+        protected void Add<R>(string key, CDO_Table<R> value) where R : CDO_Record, new()
         {
             if (!ContainsKey(key)) Add(key, value);
             else
             {
-                CDO_Table<R> table = (CDO_Table<R>)this[key];
+                var table = (CDO_Table<R>)this[key];
                 foreach (R record in value)
                 {
-                    if (!table.Contains(record))
-                        table.Add(record);
-                    else
-                    {
-                        var index = table.IndexOf(record);
-                        var existing = table[index];
-                        existing.Merge(record);
-                    }
+                    table.Add(record, MergeMode.Merge);
                 }
             }
         }

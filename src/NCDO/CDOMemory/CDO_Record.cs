@@ -2,9 +2,11 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Json;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using NCDO.Extensions;
 using NCDO.Interfaces;
 using JsonPair = System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>;
@@ -104,5 +106,12 @@ namespace NCDO.CDOMemory
         }
 
         #endregion
+
+        public virtual event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

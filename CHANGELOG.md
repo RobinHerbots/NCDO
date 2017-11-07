@@ -1,6 +1,12 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.16 - 2017-11-07]
+### added
+- support for datadefinitions schema
+### update
+- extend record with INotifyPropertyChanged & table with INotifyCollectionChanged
+
 ## [0.0.15 - 2017-11-06]
 ### added
 - version prop in cdosession

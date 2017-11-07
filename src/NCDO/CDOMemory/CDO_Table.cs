@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Json;
 using System.Linq;
+using System.Reflection;
+using NCDO.Definitions;
+using NCDO.Interfaces;
 
 namespace NCDO.CDOMemory
 {
-    public class CDO_Table<T> : JsonArray, IList<T> where T : CDO_Record, new()
+    public class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged where T : CDO_Record, new()
     {
         protected List<T> _list;
 
@@ -44,12 +48,50 @@ namespace NCDO.CDOMemory
             if (item == null)
                 throw new ArgumentNullException(nameof(item));
 
-            _list.Add(item);
+            Add(item, MergeMode.Append);
         }
+
+        /// <summary>
+        /// Add a new record or merge an existing
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="mergeMode"></param>
+        public void Add(T item, MergeMode mergeMode)
+        {
+            if (!Contains(item))
+            {
+                _list.Add(item);
+                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, new[] { item }));
+            }
+            else
+            {
+                var index = IndexOf(item);
+                switch (mergeMode)
+                {
+                    case MergeMode.Empty:
+                        break;
+                    case MergeMode.Append:
+                        throw new CDOException($"Duplicate record with ID {item.GetId()}");
+                    case MergeMode.Merge:
+                        Merge(this[index], item);
+                        CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, new[] { this[index] }, index));
+                        break;
+                    case MergeMode.Replace:
+                        RemoveAt(index);
+                        _list.Add(item);
+                        CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, new[] { item }, index));
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(mergeMode), mergeMode, null);
+                }
+            }
+        }
+
 
         public new void Clear()
         {
             _list.Clear();
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
 
         public bool Contains(T item)
@@ -75,6 +117,15 @@ namespace NCDO.CDOMemory
 
         public void Insert(int index, T item)
         {
+            if (Contains(item))
+            {
+                _list.Remove(item);
+                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Move, new[] { item }, index));
+            }
+            else
+            {
+                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, new[] { item }, index));
+            }
             _list.Insert(index, item);
         }
 
@@ -86,11 +137,17 @@ namespace NCDO.CDOMemory
             set => _list[index] = value;
         }
 
-        public bool Remove(T item) => _list.Remove(item);
+        public bool Remove(T item)
+        {
+            var ret = _list.Remove(item);
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, new[] { item }));
+            return ret;
+        }
 
         public void RemoveAt(int index)
         {
             _list.RemoveAt(index);
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, null, index));
         }
 
         public void AddRange(IEnumerable<T> items)
@@ -98,6 +155,7 @@ namespace NCDO.CDOMemory
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
             _list.AddRange(items);
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, null, items));
         }
 
         public void AddRange(params T[] items)
@@ -105,6 +163,7 @@ namespace NCDO.CDOMemory
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
             _list.AddRange(items);
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, null, items));
         }
 
         public override void Save(Stream stream)
@@ -138,5 +197,44 @@ namespace NCDO.CDOMemory
 
             stream.WriteByte((byte)']');
         }
+
+        #region Implementation of INotifyCollectionChanged
+
+        /// <inheritdoc />
+        public event NotifyCollectionChangedEventHandler CollectionChanged;
+        #endregion
+
+        #region private
+        /// <summary>
+        /// merge record into the target record.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="target"></param>
+        /// <param name="source"></param>
+        /// <returns></returns>
+        private void Merge<T>(T target, T source) where T : ICloudDataRecord
+        {
+            if (source != null)
+            {
+                foreach (var propertyInfo in target.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+                )
+                {
+                    if (propertyInfo.CanRead)
+                    {
+                        var targetValue = propertyInfo.GetValue(target);
+                        if (propertyInfo.CanWrite && DefaultValue(propertyInfo.PropertyType) == targetValue)
+                        {
+                            propertyInfo.SetValue(target, propertyInfo.GetValue(source));
+                        }
+                    }
+                }
+            }
+        }
+
+        private object DefaultValue(Type targetType)
+        {
+            return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
+        }
+        #endregion
     }
 }

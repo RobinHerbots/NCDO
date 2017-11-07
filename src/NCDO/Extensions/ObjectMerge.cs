@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using NCDO.Interfaces;
 
 namespace NCDO.Extensions
 {
@@ -12,7 +13,7 @@ namespace NCDO.Extensions
         /// <param name="target"></param>
         /// <param name="source"></param>
         /// <returns></returns>
-        public static T Merge<T>(this T target, T source)
+        public static T Merge<T>(this T target, T source) where T : ICloudDataRecord
         {
             if (source != null)
             {

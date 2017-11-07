@@ -1,9 +1,11 @@
+using System.ComponentModel;
+
 namespace NCDO.Interfaces
 {
     /// <summary>
     /// CloudDataRecord is a record instance for any table stored in the local memory of an associated class instance (CDO).
     /// </summary>
-    public interface ICloudDataRecord 
+    public interface ICloudDataRecord : INotifyPropertyChanged
     {
         #region Properties
         /// <summary>
