@@ -52,7 +52,7 @@ namespace NCDO.CDOMemory
 
         protected void Add<R>(string key, CDO_Table<R> value) where R : CDO_Record, new()
         {
-            if (!ContainsKey(key)) Add(key, value);
+            if (!ContainsKey(key)) base.Add(key, value);
             else
             {
                 var table = (CDO_Table<R>)this[key];
