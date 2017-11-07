@@ -1,6 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.17 - 2017-11-07]
+### update
+- add changetracking in cdo_record
+
+### fixed
+- stackoverflow bug
+
 ## [0.0.16 - 2017-11-07]
 ### added
 - support for datadefinitions schema

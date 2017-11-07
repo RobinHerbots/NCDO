@@ -5,7 +5,7 @@ namespace NCDO.Interfaces
     /// <summary>
     /// CloudDataRecord is a record instance for any table stored in the local memory of an associated class instance (CDO).
     /// </summary>
-    public interface ICloudDataRecord : INotifyPropertyChanged
+    public interface ICloudDataRecord : INotifyPropertyChanged, INotifyPropertyChanging
     {
         #region Properties
         /// <summary>
@@ -45,6 +45,12 @@ namespace NCDO.Interfaces
         /// record object.
         /// </summary>
         void RejectRowChanges();
+        /// <summary>
+        /// Indicates if a property is changed
+        /// </summary>
+        /// <param name="propertyName"></param>
+        /// <returns></returns>
+        bool IsPropertyChanged(string propertyName);
 
         #endregion
     }

@@ -225,24 +225,14 @@ namespace NCDO.CDOMemory
         {
             if (source != null)
             {
-                foreach (var propertyInfo in target.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
-                )
+                foreach (var propertyInfo in target.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
                 {
-                    if (propertyInfo.CanRead)
+                    if (propertyInfo.CanRead && propertyInfo.CanWrite && !target.IsPropertyChanged(propertyInfo.Name))
                     {
-                        var targetValue = propertyInfo.GetValue(target);
-                        if (propertyInfo.CanWrite && DefaultValue(propertyInfo.PropertyType) == targetValue)
-                        {
-                            propertyInfo.SetValue(target, propertyInfo.GetValue(source));
-                        }
+                        propertyInfo.SetValue(target, propertyInfo.GetValue(source));
                     }
                 }
             }
-        }
-
-        private object DefaultValue(Type targetType)
-        {
-            return targetType.IsValueType ? Activator.CreateInstance(targetType) : null;
         }
         #endregion
     }

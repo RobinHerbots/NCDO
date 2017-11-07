@@ -2,6 +2,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Json;
@@ -17,6 +18,7 @@ namespace NCDO.CDOMemory
 {
     public class CDO_Record : JsonObject, ICloudDataRecord
     {
+        internal Dictionary<string, JsonValue> _changeDict = new Dictionary<string, JsonValue>();
         /// <summary>
         ///     An internal field for the CDO that is provided to find a given record in its memory.
         /// </summary>
@@ -69,7 +71,7 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public void AcceptRowChanges()
         {
-            throw new NotImplementedException();
+            _changeDict.Clear();
         }
 
         /// <inheritdoc />
@@ -102,16 +104,62 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public void RejectRowChanges()
         {
-            throw new NotImplementedException();
+            foreach (var keyValuePair in _changeDict)
+            {
+                this[keyValuePair.Key] = keyValuePair.Value;
+            }
+            _changeDict.Clear();
         }
+
+        /// <inheritdoc />
+        public bool IsPropertyChanged(string propertyName) => _changeDict.ContainsKey(propertyName);
 
         #endregion
 
-        public virtual event PropertyChangedEventHandler PropertyChanged;
+        #region Implementation of INotifyPropertyChang(ing|ed)
+        public event PropertyChangedEventHandler PropertyChanged;
 
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        protected virtual void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+
+        /// <inheritdoc />
+        public event PropertyChangingEventHandler PropertyChanging;
+        protected virtual void OnPropertyChanging(string propertyName)
+        {
+            PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
+            if (!_changeDict.ContainsKey(propertyName)) _changeDict.Add(propertyName, this[propertyName]);
+        }
+
+        public new void Add(string key, JsonValue value)
+        {
+            if (key == null)
+                throw new ArgumentNullException(nameof(key));
+            if(ContainsKey(key)) OnPropertyChanging(key);
+            base.Add(key, value);
+            if (IsPropertyChanged(key)) OnPropertyChanged(key);
+        }
+
+        public new void AddRange(IEnumerable<KeyValuePair<string, JsonValue>> items)
+        {
+            if (items == null)
+                throw new ArgumentNullException(nameof(items));
+            foreach (KeyValuePair<string, JsonValue> keyValuePair in items)
+                Add(keyValuePair.Key, keyValuePair.Value);
+        }
+
+        public new JsonValue this[string key]
+        {
+            get => base[key];
+            set
+            {
+                if (ContainsKey(key)) OnPropertyChanging(key);
+                base[key] = value;
+                if(IsPropertyChanged(key)) OnPropertyChanged(key);
+            }
+        }
+
+        #endregion
     }
 }
