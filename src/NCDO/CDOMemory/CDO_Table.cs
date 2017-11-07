@@ -56,12 +56,14 @@ namespace NCDO.CDOMemory
         /// </summary>
         /// <param name="item"></param>
         /// <param name="mergeMode"></param>
-        public void Add(T item, MergeMode mergeMode)
+        /// <param name="notify"></param>
+        public void Add(T item, MergeMode mergeMode, bool notify = true)
         {
             if (!Contains(item))
             {
                 _list.Add(item);
-                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, new[] { item }));
+                if (notify)
+                    CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, new[] { item }));
             }
             else
             {
@@ -74,12 +76,14 @@ namespace NCDO.CDOMemory
                         throw new CDOException($"Duplicate record with ID {item.GetId()}");
                     case MergeMode.Merge:
                         Merge(this[index], item);
-                        CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, new[] { this[index] }, index));
+                        if (notify)
+                            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, new[] { this[index] }, index));
                         break;
                     case MergeMode.Replace:
                         RemoveAt(index);
                         _list.Add(item);
-                        CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, new[] { item }, index));
+                        if (notify)
+                            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, new[] { item }, index));
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(mergeMode), mergeMode, null);
@@ -152,18 +156,23 @@ namespace NCDO.CDOMemory
 
         public void AddRange(IEnumerable<T> items)
         {
+            AddRange(items, MergeMode.Append);
+        }
+
+        public void AddRange(IEnumerable<T> items, MergeMode mergeMode)
+        {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
-            _list.AddRange(items);
+            foreach (var item in items)
+            {
+                Add(item, mergeMode, false);
+            }
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, null, items));
         }
 
         public void AddRange(params T[] items)
         {
-            if (items == null)
-                throw new ArgumentNullException(nameof(items));
-            _list.AddRange(items);
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, null, items));
+            AddRange(items.AsEnumerable());
         }
 
         public override void Save(Stream stream)
