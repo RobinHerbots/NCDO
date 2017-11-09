@@ -555,7 +555,7 @@ namespace NCDO.Interfaces
 
         public async Task<ICDORequest> Fill(Expression<Func<R, bool>> filter)
         {
-            return await Fill(new QueryRequest() {ABLFilter = filter.ToABLFIlter()});
+            return await Fill(new QueryRequest() { ABLFilter = filter.ToABLFIlter() });
         }
 
         public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false)
@@ -809,8 +809,7 @@ namespace NCDO.Interfaces
                 Fill().Wait();
             }
             DetermineMainTable();
-            _primaryKey = _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties[_mainTable]
-                .PrimaryKey.FirstOrDefault();
+            _primaryKey = _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties[_mainTable].PrimaryKey.FirstOrDefault();
         }
 
         /// <summary>
@@ -839,11 +838,9 @@ namespace NCDO.Interfaces
 
         private void DetermineMainTable()
         {
-            if (_resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties.Count == 1)
-                _mainTable = _resourceDefinition.Schema.Properties.FirstOrDefault().Value.Properties.FirstOrDefault()
-                    .Key;
-            else
-                _mainTable = _resourceDefinition.Relations?.FirstOrDefault().ParentName;
+            _mainTable = _resourceDefinition.Relations != null
+                ? _resourceDefinition.Relations.FirstOrDefault().ParentName
+                : _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties.FirstOrDefault().Key;
         }
 
         #endregion
