@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Json;
 using System.Linq;
 using System.Linq.Expressions;
@@ -757,12 +758,11 @@ namespace NCDO.Interfaces
                 request.Method = cDORequest.Method;
                 request.RequestUri = cDORequest.RequestUri;
                 if (!cDORequest.Method.Equals(HttpMethod.Get))
-                    request.Content =
-                        new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
-
-                var response = await _cDOSession.HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,
-                    default(CancellationToken));
-                await processResponse?.Invoke(response, cDORequest);
+                    request.Content = new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
+                using (var response = await _cDOSession.HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, default(CancellationToken)))
+                {
+                    await processResponse?.Invoke(response, cDORequest);
+                }
             }
             return cDORequest;
         }

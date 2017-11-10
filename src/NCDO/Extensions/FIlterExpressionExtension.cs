@@ -33,7 +33,8 @@ namespace NCDO.Extensions
                     }
                     throw new NotSupportedException($"ToABLFIlter {expression.NodeType} {mc?.Method.Name}");
                 case ExpressionType.Constant:
-                    return expression.ToString().Replace("\"", valueParameter ? "'" : string.Empty);
+                    var constantValue = expression.ToString().Replace("\"", valueParameter ? "'" : string.Empty);
+                    return constantValue == "null" ? "''" : constantValue;
                 case ExpressionType.Equal:
                     be = expression as BinaryExpression;
                     return $"{ToString(be?.Left)} = {ToString(be?.Right, true)}";
