@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.18 - 2017-11-14]
+### fixed
+- filterexpression allow null for ablfilter
+- Fix in determinemaintable
+
 ## [0.0.17 - 2017-11-07]
 ### update
 - add changetracking in cdo_record
