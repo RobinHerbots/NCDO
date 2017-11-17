@@ -1,23 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
 using System.Json;
 using System.Linq;
 using System.Reflection;
 using NCDO.Definitions;
+using NCDO.Extensions;
 using NCDO.Interfaces;
 
 namespace NCDO.CDOMemory
 {
-    public class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged where T : CDO_Record, new()
+    public class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking where T : CDO_Record, new()
     {
         protected List<T> _list;
+        internal List<T> _changed = new List<T>();
+        internal List<T> _deleted = new List<T>();
 
         public CDO_Table(params T[] items)
         {
             _list = new List<T>();
-            AddRange(items);
+            AddRange(items, MergeMode.Append, false);
         }
 
         public CDO_Table(IEnumerable<T> items)
@@ -25,7 +29,8 @@ namespace NCDO.CDOMemory
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
 
-            _list = new List<T>(items);
+            _list = new List<T>();
+            AddRange(items, MergeMode.Append, false);
         }
 
         public CDO_Table(IEnumerable<JsonObject> items)
@@ -33,12 +38,13 @@ namespace NCDO.CDOMemory
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
 
-            _list = new List<T>(items.Select(i =>
+            _list = new List<T>();
+            AddRange(items.Select(i =>
             {
                 var record = new T();
                 record.AddRange(i);
                 return record;
-            }));
+            }), MergeMode.Append, false);
         }
 
         public override JsonType JsonType => JsonType.Array;
@@ -59,11 +65,13 @@ namespace NCDO.CDOMemory
         /// <param name="notify"></param>
         public void Add(T item, MergeMode mergeMode, bool notify = true)
         {
+            item.PropertyChanged -= Item_PropertyChanged;
+            item.PropertyChanged += Item_PropertyChanged;
             if (!Contains(item))
             {
                 _list.Add(item);
                 if (notify)
-                    CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, new[] { item }));
+                    OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] { item });
             }
             else
             {
@@ -77,25 +85,35 @@ namespace NCDO.CDOMemory
                     case MergeMode.Merge:
                         Merge(this[index], item);
                         if (notify)
-                            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, new[] { this[index] }, index));
+                            OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] { this[index] }, index);
                         break;
                     case MergeMode.Replace:
                         RemoveAt(index);
                         _list.Add(item);
                         if (notify)
-                            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, new[] { item }, index));
+                            OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] { item }, index);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(mergeMode), mergeMode, null);
                 }
             }
         }
-
+        /// <summary>
+        /// Detect changes from childrecords
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Item_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            OnCollectionChanged(sender, e);
+        }
 
         public new void Clear()
         {
+            var oldList = new List<T>();
+            oldList.AddRange(_list);
             _list.Clear();
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            OnCollectionChanged(NotifyCollectionChangedAction.Reset, oldList);
         }
 
         public bool Contains(T item)
@@ -124,11 +142,11 @@ namespace NCDO.CDOMemory
             if (Contains(item))
             {
                 _list.Remove(item);
-                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Move, new[] { item }, index));
+                OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { item });
             }
             else
             {
-                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, new[] { item }, index));
+                OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] { item });
             }
             _list.Insert(index, item);
         }
@@ -144,14 +162,14 @@ namespace NCDO.CDOMemory
         public bool Remove(T item)
         {
             var ret = _list.Remove(item);
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, new[] { item }));
+            OnCollectionChanged(NotifyCollectionChangedAction.Remove, new[] { item });
             return ret;
         }
 
         public void RemoveAt(int index)
         {
             _list.RemoveAt(index);
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, null, index));
+            OnCollectionChanged(NotifyCollectionChangedAction.Remove, null, index);
         }
 
         public void AddRange(IEnumerable<T> items)
@@ -159,7 +177,7 @@ namespace NCDO.CDOMemory
             AddRange(items, MergeMode.Append);
         }
 
-        public void AddRange(IEnumerable<T> items, MergeMode mergeMode)
+        public void AddRange(IEnumerable<T> items, MergeMode mergeMode, bool notify = true)
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
@@ -167,12 +185,8 @@ namespace NCDO.CDOMemory
             {
                 Add(item, mergeMode, false);
             }
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, null, items));
-        }
-
-        public void AddRange(params T[] items)
-        {
-            AddRange(items.AsEnumerable());
+            if (notify)
+                OnCollectionChanged(NotifyCollectionChangedAction.Add, items);
         }
 
         public override void Save(Stream stream)
@@ -211,6 +225,38 @@ namespace NCDO.CDOMemory
 
         /// <inheritdoc />
         public event NotifyCollectionChangedEventHandler CollectionChanged;
+
+        protected virtual void OnCollectionChanged(NotifyCollectionChangedAction action, IEnumerable<T> items = null, int index = -1)
+        {
+            switch (action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                case NotifyCollectionChangedAction.Move:
+                    _changed.AddNew(items);
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    if (index != -1)
+                        _deleted.AddNew(new[] { _list[index] });
+                    _deleted.AddNew(items);
+                    break;
+                case NotifyCollectionChangedAction.Replace:
+                    _changed.AddNew(items);
+                    _deleted.AddNew(new[] { _list[index] });
+                    break;
+                case NotifyCollectionChangedAction.Reset:
+                    _deleted.AddNew(items);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(action), action, null);
+            }
+
+
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(action, items, index));
+        }
+        private void OnCollectionChanged(object sender, PropertyChangedEventArgs e)
+        {
+            OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { (T)sender });
+        }
         #endregion
 
         #region private
@@ -234,6 +280,19 @@ namespace NCDO.CDOMemory
                 }
             }
         }
+        #endregion
+
+        #region Implementation of IChangeTracking
+
+        /// <inheritdoc />
+        public void AcceptChanges()
+        {
+            _changed.Clear();
+            _deleted.Clear();
+        }
+
+        /// <inheritdoc />
+        public bool IsChanged => _changed.Count > 0 || _deleted.Count > 0;
         #endregion
     }
 }

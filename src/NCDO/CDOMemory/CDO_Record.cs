@@ -96,12 +96,6 @@ namespace NCDO.CDOMemory
         }
 
         /// <inheritdoc />
-        public void Remove()
-        {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc />
         public void RejectRowChanges()
         {
             foreach (var keyValuePair in _changeDict)
@@ -136,7 +130,7 @@ namespace NCDO.CDOMemory
         {
             if (key == null)
                 throw new ArgumentNullException(nameof(key));
-            if(ContainsKey(key)) OnPropertyChanging(key);
+            if (ContainsKey(key)) OnPropertyChanging(key);
             base.Add(key, value);
             if (IsPropertyChanged(key)) OnPropertyChanged(key);
         }
@@ -156,10 +150,22 @@ namespace NCDO.CDOMemory
             {
                 if (ContainsKey(key)) OnPropertyChanging(key);
                 base[key] = value;
-                if(IsPropertyChanged(key)) OnPropertyChanged(key);
+                if (IsPropertyChanged(key)) OnPropertyChanged(key);
             }
         }
 
+        #endregion
+
+        #region Implementation of IChangeTracking
+
+        /// <inheritdoc />
+        public void AcceptChanges()
+        {
+            AcceptRowChanges();
+        }
+
+        /// <inheritdoc />
+        public bool IsChanged => _changeDict.Count > 0;
         #endregion
     }
 }
