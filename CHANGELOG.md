@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [UNRELEASED]
+### update
+- Make CDO_Record & CDO_Table track full changes
+
 ## [0.0.18 - 2017-11-14]
 ### fixed
 - filterexpression allow null for ablfilter
