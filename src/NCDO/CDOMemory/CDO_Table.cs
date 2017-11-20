@@ -15,6 +15,7 @@ namespace NCDO.CDOMemory
     public class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking where T : CDO_Record, new()
     {
         protected List<T> _list;
+        internal List<T> _new = new List<T>();
         internal List<T> _changed = new List<T>();
         internal List<T> _deleted = new List<T>();
 
@@ -116,11 +117,7 @@ namespace NCDO.CDOMemory
             OnCollectionChanged(NotifyCollectionChangedAction.Reset, oldList);
         }
 
-        public bool Contains(T item)
-        {
-            var itemId = item.GetId();
-            return _list.Any(i => i.GetId() == itemId);
-        }
+        public bool Contains(T item) => Contains(_list, item);
 
         public void CopyTo(T[] array, int arrayIndex)
         {
@@ -141,7 +138,8 @@ namespace NCDO.CDOMemory
         {
             if (Contains(item))
             {
-                _list.Remove(item);
+                var ndx = IndexOf(item);
+                _list.RemoveAt(ndx);
                 OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { item });
             }
             else
@@ -156,14 +154,15 @@ namespace NCDO.CDOMemory
         public new T this[int index]
         {
             get => _list[index];
-            set => _list[index] = value;
+            set { Insert(index, value); }
         }
 
         public bool Remove(T item)
         {
-            var ret = _list.Remove(item);
+            var index = IndexOf(item);
+            _list.RemoveAt(index);
             OnCollectionChanged(NotifyCollectionChangedAction.Remove, new[] { item });
-            return ret;
+            return true;
         }
 
         public void RemoveAt(int index)
@@ -183,10 +182,8 @@ namespace NCDO.CDOMemory
                 throw new ArgumentNullException(nameof(items));
             foreach (var item in items)
             {
-                Add(item, mergeMode, false);
+                Add(item, mergeMode, notify);
             }
-            if (notify)
-                OnCollectionChanged(NotifyCollectionChangedAction.Add, items);
         }
 
         public override void Save(Stream stream)
@@ -231,20 +228,22 @@ namespace NCDO.CDOMemory
             switch (action)
             {
                 case NotifyCollectionChangedAction.Add:
+                    AddNew(_new, items);
+                    break;
                 case NotifyCollectionChangedAction.Move:
-                    _changed.AddNew(items);
+                    AddNew(_changed, items);
                     break;
                 case NotifyCollectionChangedAction.Remove:
                     if (index != -1)
-                        _deleted.AddNew(new[] { _list[index] });
-                    _deleted.AddNew(items);
+                        AddNew(_deleted, new[] { _list[index] });
+                    AddNew(_deleted, items);
                     break;
                 case NotifyCollectionChangedAction.Replace:
-                    _changed.AddNew(items);
-                    _deleted.AddNew(new[] { _list[index] });
+                    AddNew(_changed, items);
+                    AddNew(_deleted, new[] { _list[index] });
                     break;
                 case NotifyCollectionChangedAction.Reset:
-                    _deleted.AddNew(items);
+                    AddNew(_deleted, items);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(action), action, null);
@@ -280,6 +279,25 @@ namespace NCDO.CDOMemory
                 }
             }
         }
+
+        private void AddNew(IList<T> list, IEnumerable<T> items)
+        {
+            if (items != null)
+            {
+                foreach (var item in items)
+                {
+                    if (!Contains(list, item))
+                        list.Add(item);
+                }
+            }
+        }
+
+        private bool Contains(IList<T> list, T item)
+        {
+            var itemId = item.GetId();
+            return list.Any(i => i.GetId() == itemId);
+        }
+
         #endregion
 
         #region Implementation of IChangeTracking
@@ -294,5 +312,16 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public bool IsChanged => _changed.Count > 0 || _deleted.Count > 0;
         #endregion
+
+        public void RejectChanges()
+        {
+            foreach (var record in _changed)
+            {
+                record.RejectRowChanges();
+            }
+            _changed.Clear();
+            AddRange(_deleted);
+            _deleted.Clear();
+        }
     }
 }

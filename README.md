@@ -33,7 +33,5 @@ NCDO is a wip and thus not feature complete.
 The current session object implementation is for anonymous authentication only.  
 Other authentication models can be implemented by deriving from CDOSession and overriding the OnOpenRequest function.
 
-Support for CRUD operation is limited.
-
 As the project matures more features will become available.  
 Any contributions (code, documentation) is also welcome. 

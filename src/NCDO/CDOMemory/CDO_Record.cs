@@ -91,7 +91,7 @@ namespace NCDO.CDOMemory
         {
             if (string.IsNullOrEmpty(primaryKey))
                 return _id;
-            var pkValue = this.Get(primaryKey).ToString();
+            var pkValue = this.Get(primaryKey).ToString().Trim('"');
             return string.IsNullOrEmpty(pkValue) ? _id : pkValue;
         }
 

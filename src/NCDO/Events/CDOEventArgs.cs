@@ -12,7 +12,7 @@ namespace NCDO.Events
     public class CDOEventArgs<T, D, R> : CDOEventArgs
         where T : class
         where D : CDO_Dataset, new()
-        where R : ICloudDataRecord
+        where R : CDO_Record, new()
     {
         public ICloudDataRecord Record { get; set; }
         public ICloudDataObject<T, D, R> CDO { get; internal set; }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Json;
 using System.Linq;
@@ -74,7 +75,7 @@ namespace NCDO.Interfaces
         ///     Accepts changes to the data in CDO memory for a specified
         ///     record object.
         /// </summary>
-        bool AcceptRowChanges();
+        //bool AcceptRowChanges();
 
         /// <summary>
         ///     Reads the record objects stored in the specified local storage
@@ -83,21 +84,6 @@ namespace NCDO.Interfaces
         ///     data, if they exist.
         /// </summary>
         void AddLocalRecords();
-
-        /// <summary>
-        ///     Reads an array, table, or ProDataSet object containing one
-        ///     or more record objects and updates CDO memory based
-        ///     on these record objects, including any pending changes and
-        ///     before-image data, if they exist.
-        /// </summary>
-        void AddRecords(MergeMode mergeMode = MergeMode.Replace);
-
-        /// <summary>
-        ///     Updates field values for the specified CloudDataRecord
-        ///     object in CDO memory.
-        /// </summary>
-        void Assign();
-
         /// <summary>
         ///     Clears out all data and changes stored in a specified local
         ///     storage area, and removes the cleared storage area.
@@ -203,17 +189,13 @@ namespace NCDO.Interfaces
         /// </summary>
         void RejectChanges();
 
-        /// <summary>
-        ///     Rejects changes to the data in CDO memory for a specified
-        ///     record object.
-        /// </summary>
-        void RejectRowChanges();
+        ///// <summary>
+        /////     Rejects changes to the data in CDO memory for a specified
+        /////     record object.
+        ///// </summary>
+        //void RejectRowChanges();
 
-        /// <summary>
-        ///     Deletes the specified table record referenced in CDO
-        ///     memory.
-        /// </summary>
-        void Remove();
+
 
         /// <summary>
         ///     Synchronizes to the Cloud Data Server all changes pending in
@@ -266,7 +248,7 @@ namespace NCDO.Interfaces
     public interface ICloudDataObject<T, D, R> : ICloudDataObject
         where T : class
         where D : CDO_Dataset, new()
-        where R : ICloudDataRecord
+        where R : CDO_Record, new()
     {
 
         #region Methods
@@ -274,13 +256,24 @@ namespace NCDO.Interfaces
         ///     Creates a new record object for a table referenced in CDO
         ///     memory and returns a reference to the new record.
         /// </summary>
-        R Add();
-
+        R Add(R record);
+        /// <summary>
+        ///     Reads an array, table, or ProDataSet object containing one
+        ///     or more record objects and updates CDO memory based
+        ///     on these record objects, including any pending changes and
+        ///     before-image data, if they exist.
+        /// </summary>
+        void AddRecords(IEnumerable<R> records, MergeMode mergeMode = MergeMode.Replace);
+        /// <summary>
+        ///     Updates field values for the specified CloudDataRecord
+        ///     object in CDO memory.
+        /// </summary>
+        void Assign(R record);
         /// <summary>
         ///     Creates a new record object for a table referenced in CDO
         ///     memory and returns a reference to the new record.
         /// </summary>
-        R Create();
+        R Create(R record);
 
         /// <summary>
         ///     Initializes CDO memory with record objects from the data
@@ -319,6 +312,11 @@ namespace NCDO.Interfaces
         ///     resource for which the CDO is created.
         /// </summary>
         Task<ICDORequest> Read(Expression<Func<R, bool>> filter);
+        /// <summary>
+        ///     Deletes the specified table record referenced in CDO
+        ///     memory.
+        /// </summary>
+        bool Remove(R record);
         #endregion
 
         #region Properties
@@ -331,7 +329,7 @@ namespace NCDO.Interfaces
         ///     In case of a gneric CDO this is a reference to the CDO_Dataset
         ///     The CDO_CLientgen generates typed ref to tables
         /// </summary>
-        D TableReference { get; }
+        CDO_Table<R> TableReference { get; }
 
         /// <summary>
         ///     A property on a CDO table reference that references a
@@ -453,7 +451,7 @@ namespace NCDO.Interfaces
     public abstract class ACloudDataObject<T, D, R> : ICloudDataObject<T, D, R>
         where T : class
         where D : CDO_Dataset, new()
-        where R : class, ICloudDataRecord
+        where R : CDO_Record, new()
     {
         private readonly ICDOSession _cDOSession;
         protected D _cdoMemory;
@@ -489,7 +487,7 @@ namespace NCDO.Interfaces
         }
 
 
-        public bool AutoApplyChanges { get; set; }
+        public bool AutoApplyChanges { get; set; } = true;
         public bool AutoSort { get; set; }
         public bool CaseSensitive { get; set; }
 
@@ -498,20 +496,25 @@ namespace NCDO.Interfaces
 
         public R Record { get; set; }
 
-        public D TableReference => _cdoMemory;
+        public CDO_Table<R> TableReference => _cdoMemory?.Get(_mainTable) as CDO_Table<R>;
 
         public void AcceptChanges()
         {
+            if (TableReference != null)
+            {
+                TableReference?.AcceptChanges();
+            }
+            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "AcceptChanges"));
         }
 
-        public bool AcceptRowChanges()
-        {
-            return true;
-        }
+        //public bool AcceptRowChanges()
+        //{
+        //    throw new  NotImplementedException();
+        //}
 
-        public R Add()
+        public R Add(R record)
         {
-            return Create();
+            return Create(record);
         }
 
         public void AddLocalRecords()
@@ -519,24 +522,32 @@ namespace NCDO.Interfaces
             throw new NotImplementedException();
         }
 
-        public void AddRecords(MergeMode mergeMode = MergeMode.Replace)
+        public void AddRecords(IEnumerable<R> records, MergeMode mergeMode = MergeMode.Replace)
         {
-            throw new NotImplementedException();
+            if (TableReference != null)
+            {
+                TableReference?.AddRange(records);
+            }
+            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "AddRecords"));
         }
 
-        public void Assign()
+        public void Assign(R record)
         {
-            throw new NotImplementedException();
+            if (TableReference != null)
+            {
+                TableReference?.Add(record, MergeMode.Merge);
+            }
+            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "Assign"));
         }
 
-        public R Create()
+        public R Create(R record)
         {
-            BeforeCreate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Session = _cDOSession, Request = null, Record = null });
-
-
-            AfterCreate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Session = _cDOSession });
-
-            return null;
+            if (TableReference != null)
+            {
+                TableReference?.Add(record);
+                return record;
+            }
+            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "Create"));
         }
 
         public void DeleteLocal()
@@ -582,8 +593,11 @@ namespace NCDO.Interfaces
 
         public R[] GetData()
         {
-            var table = _cdoMemory?.Get(_mainTable);
-            return table?.Cast<R>().ToArray();
+            if (TableReference != null)
+            {
+                return TableReference?.Cast<R>().ToArray();
+            }
+            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "GetDate"));
         }
 
         public string[] GetErrors()
@@ -608,12 +622,20 @@ namespace NCDO.Interfaces
 
         public bool HasChanges()
         {
-            throw new NotImplementedException();
+            if (TableReference != null)
+            {
+                return TableReference.IsChanged;
+            }
+            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "HasChanges"));
         }
 
         public bool HasData()
         {
-            throw new NotImplementedException();
+            if (TableReference != null)
+            {
+                return (TableReference?.Cast<R>()).Any();
+            }
+            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "HasData"));
         }
 
         public async Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null)
@@ -686,23 +708,42 @@ namespace NCDO.Interfaces
 
         public void RejectChanges()
         {
-            throw new NotImplementedException();
+            if (TableReference != null)
+            {
+                TableReference.RejectChanges();
+            }
+            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "RejectChanges"));
         }
 
-        public void RejectRowChanges()
-        {
-            throw new NotImplementedException();
-        }
+        //public void RejectRowChanges()
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public void Remove()
+        public bool Remove(R record)
         {
-            throw new NotImplementedException();
+            if (TableReference != null)
+            {
+                return TableReference.Remove(record);
+            }
+            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "Remove"));
         }
 
         public void SaveChanges()
         {
             BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
-            throw new NotImplementedException();
+
+            if (TableReference != null)
+            {
+                //create
+
+                //update
+                
+                //delete
+
+            }
+            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "SaveChanges"));
+            AfterSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
         }
 
         public void SaveLocal()

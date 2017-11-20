@@ -39,7 +39,7 @@ namespace NCDO.Interfaces
         /// <summary>
         /// Deletes the specified table record referenced in CDO memory.
         /// </summary>
-        void Remove();
+        //void Remove();
         /// <summary>
         /// Rejects changes to the data in CDO memory for a specified
         /// record object.
