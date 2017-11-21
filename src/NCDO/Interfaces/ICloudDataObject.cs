@@ -664,7 +664,7 @@ namespace NCDO.Interfaces
 
         public async Task<ICDORequest> Read(QueryRequest queryRequest = null)
         {
-            return await Read(queryRequest?.ToString());
+            return await Read(queryRequest?.ToString(_resourceDefinition.Operations.FirstOrDefault(o => o.Type == OperationType.Read)?.Capabilities));
         }
 
         public async Task<ICDORequest> Read(string filter)
@@ -738,7 +738,7 @@ namespace NCDO.Interfaces
                 //create
 
                 //update
-                
+
                 //delete
 
             }

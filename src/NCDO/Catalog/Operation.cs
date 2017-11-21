@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Json;
 using NCDO.Definitions;
 using NCDO.Extensions;
@@ -19,6 +20,8 @@ namespace NCDO.Catalog
             Name = operation.Get("name");
             if (operation.ContainsKey("mergeMode"))
                 MergeMode = (MergeMode)Enum.Parse(typeof(MergeMode), operation.Get("mergeMode"), true);
+            MappingType = operation.Get("mappingType");
+            Capabilities = operation.Get("capabilities");
             if (operation.ContainsKey("params"))
             {
                 Params = new List<Param>();
@@ -28,6 +31,8 @@ namespace NCDO.Catalog
                 }
             }
         }
+
+        
 
         /// <summary>
         /// Relative URI, run-time client info. Ex: /{CustNum} or ?Name={Name} Optional. If not specified, the CDO defaults to the resource level’s path property. If specified, the operation’s URL is the resource level’s path property concatenated with the specified operation’s path property. Ex. “/Customer” + “/{CustNum}” -> “/Customer/{CustNum} “
@@ -84,5 +89,10 @@ namespace NCDO.Catalog
         /// Optional. List of input and output parameters for the operation. Can be set to empty array ([]) to indicate that the operation does not have parameters.
         /// </summary>
         public List<Param> Params { get; }
+
+        #region Filter capabilities
+        public string MappingType { get; }
+        public string Capabilities { get; }
+        #endregion
     }
 }

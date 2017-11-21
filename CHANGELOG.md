@@ -4,6 +4,7 @@ All notable changes to this project will be documented in this file.
 ## [UNRELEASED]
 ### added
 - full CRUD support in CDO
+- track newly created records
 ### update
 - Make CDO_Record & CDO_Table track full changes
 

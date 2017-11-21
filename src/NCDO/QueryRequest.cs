@@ -1,4 +1,5 @@
-﻿using System.Json;
+﻿using System;
+using System.Json;
 using System.Runtime.CompilerServices;
 using NCDO.Extensions;
 
@@ -71,19 +72,26 @@ namespace NCDO
         /// <inheritdoc />
         public override string ToString()
         {
-            if (!string.IsNullOrEmpty(ID))
+            return ToString(null);
+        }
+        public string ToString(string capabilities)
+        {
+            if (string.IsNullOrEmpty(capabilities))
+                return ABLFilter.Trim('"');
+
+            if (!string.IsNullOrEmpty(ID) && capabilities.IndexOf("id", StringComparison.InvariantCultureIgnoreCase) != -1)
                 return $"ID={ID}";
 
             var filter = new JsonObject();
-            if (!string.IsNullOrEmpty(ABLFilter))
+            if (!string.IsNullOrEmpty(ABLFilter) && capabilities.IndexOf("ablFilter", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("ablFilter", ABLFilter);
-            if (!string.IsNullOrEmpty(null))
+            if (!string.IsNullOrEmpty(null) && capabilities.IndexOf("sqlQuery", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("sqlQuery", "");
-            if (!string.IsNullOrEmpty(Sort))
+            if (!string.IsNullOrEmpty(Sort) && capabilities.IndexOf("orderBy", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("orderBy", Sort);
-            if (default(int) != Skip)
+            if (default(int) != Skip && capabilities.IndexOf("skip", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("skip", Skip);
-            if (default(int) != Top)
+            if (default(int) != Top && capabilities.IndexOf("top", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("top", Top);
 
             return filter.ToString();
