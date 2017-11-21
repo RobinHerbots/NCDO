@@ -5,8 +5,12 @@ All notable changes to this project will be documented in this file.
 ### added
 - full CRUD support in CDO
 - track newly created records
+
 ### update
 - Make CDO_Record & CDO_Table track full changes
+
+### fixed
+- Add support for capabilities detection #3
 
 ## [0.0.18 - 2017-11-14]
 ### fixed
