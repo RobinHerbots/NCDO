@@ -66,11 +66,12 @@ namespace NCDO.CDOMemory
         /// <param name="notify"></param>
         public void Add(T item, MergeMode mergeMode, bool notify = true)
         {
-            item.PropertyChanged -= Item_PropertyChanged;
-            item.PropertyChanged += Item_PropertyChanged;
+
             if (!Contains(item))
             {
                 _list.Add(item);
+                item.PropertyChanged -= Item_PropertyChanged;
+                item.PropertyChanged += Item_PropertyChanged;
                 if (notify)
                     OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] { item });
             }
@@ -231,7 +232,12 @@ namespace NCDO.CDOMemory
                     AddNew(_new, items);
                     break;
                 case NotifyCollectionChangedAction.Move:
-                    AddNew(_changed, items);
+                    if (items != null)
+                        foreach (var item in items)
+                        {
+                            if (!_new.Any(r => r.GetId() == item.GetId()))
+                                AddNew(_changed, new[] { item });
+                        }
                     break;
                 case NotifyCollectionChangedAction.Remove:
                     if (index != -1)
@@ -305,6 +311,7 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public void AcceptChanges()
         {
+            _new.Clear();
             _changed.Clear();
             _deleted.Clear();
         }
@@ -315,6 +322,11 @@ namespace NCDO.CDOMemory
 
         public void RejectChanges()
         {
+            foreach (var record in _new)
+            {
+                var index = IndexOf(record);
+                _list.RemoveAt(index);
+            }
             foreach (var record in _changed)
             {
                 record.RejectRowChanges();

@@ -203,7 +203,7 @@ namespace NCDO.Interfaces
         ///     saveChanges( ) methods, or since any prior changes
         ///     have been otherwise accepted or rejected.
         /// </summary>
-        void SaveChanges();
+        Task SaveChanges();
 
         /// <summary>
         ///     Saves CDO memory to a specified local storage area,
@@ -729,18 +729,74 @@ namespace NCDO.Interfaces
             throw new CDOException(string.Format(Properties.Resources.API_InternalError, "Remove"));
         }
 
-        public void SaveChanges()
+        public async Task SaveChanges()
         {
             BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
 
             if (TableReference != null)
             {
-                //create
-
-                //update
-
+                Operation operation = null;
                 //delete
+                if (TableReference._deleted.Any())
+                {
+                    operation = VerifyOperation(null, OperationType.Delete);
+                    var deleteRequest = new CDORequest
+                    {
+                        CDO = this,
+                        FnName = operation.Name,
+                        RequestUri =
+                            new Uri(
+                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
+                                UriKind.Absolute),
+                        Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
+                        ObjParam = new D { { _mainTable, new CDO_Table<R>(TableReference._deleted) } }
+                    };
+                    BeforeDelete?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
+                    await DoRequest(deleteRequest, ProcessCRUDResponse);
+                    AfterDelete?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
+                }
 
+                //create
+                if (TableReference._new.Any())
+                {
+                    operation = VerifyOperation(null, OperationType.Create);
+                    var createRequest = new CDORequest
+                    {
+                        CDO = this,
+                        FnName = operation.Name,
+                        RequestUri =
+                            new Uri(
+                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
+                                UriKind.Absolute),
+                        Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
+                        ObjParam = new D {{_mainTable, new CDO_Table<R>(TableReference._new)}}
+                    };
+                    BeforeCreate?.Invoke(this, new CDOEventArgs<T, D, R> {CDO = this, Request = createRequest, Session = _cDOSession});
+                    await DoRequest(createRequest, ProcessCRUDResponse);
+                    AfterCreate?.Invoke(this, new CDOEventArgs<T, D, R> {CDO = this, Request = createRequest, Session = _cDOSession});
+                }
+                //update
+                if (TableReference._changed.Any())
+                {
+                    operation = VerifyOperation(null, OperationType.Update);
+                    var updateRequest = new CDORequest
+                    {
+                        CDO = this,
+                        FnName = operation.Name,
+                        RequestUri =
+                            new Uri(
+                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
+                                UriKind.Absolute),
+                        Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
+                        ObjParam = new D { { _mainTable, new CDO_Table<R>(TableReference._changed) } }
+                    };
+                    BeforeUpdate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
+                    await DoRequest(updateRequest, ProcessCRUDResponse);
+                    AfterUpdate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
+                }
+
+                //all done => accept the changes
+                TableReference.AcceptChanges();
             }
             else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "SaveChanges"));
             AfterSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
