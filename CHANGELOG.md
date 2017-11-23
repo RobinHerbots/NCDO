@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.21 - 2017-11-23]
+### fixed
+- autoapplychanges fix
+
 ## [0.0.20 - 2017-11-23]
 ### added
 - hookup autoapplychanges

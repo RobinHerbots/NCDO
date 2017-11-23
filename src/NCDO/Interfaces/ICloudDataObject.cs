@@ -796,7 +796,7 @@ namespace NCDO.Interfaces
                 }
 
                 //all done => accept the changes
-                TableReference.AcceptChanges();
+                if (AutoApplyChanges) TableReference.AcceptChanges();
             }
             else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "SaveChanges"));
             AfterSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
@@ -890,13 +890,6 @@ namespace NCDO.Interfaces
                         _cdoMemory = new D();
                     }
                     _cdoMemory.Init(request.Response);
-                }
-                else
-                {
-                    if (AutoApplyChanges)
-                    {
-                        await SaveChanges();
-                    }
                 }
         }
 
