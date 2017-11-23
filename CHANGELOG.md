@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [UNRELEASED]
+## [0.0.19 - 2017-11-21]
 ### added
 - full CRUD support in CDO
 - track newly created records
