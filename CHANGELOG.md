@@ -1,6 +1,10 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
+## [0.0.20 - 2017-11-23]
+### added
+- hookup autoapplychanges
+
 ## [0.0.19 - 2017-11-21]
 ### added
 - full CRUD support in CDO
