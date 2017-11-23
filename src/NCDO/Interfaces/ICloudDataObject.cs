@@ -769,11 +769,11 @@ namespace NCDO.Interfaces
                                 $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D {{_mainTable, new CDO_Table<R>(TableReference._new)}}
+                        ObjParam = new D { { _mainTable, new CDO_Table<R>(TableReference._new) } }
                     };
-                    BeforeCreate?.Invoke(this, new CDOEventArgs<T, D, R> {CDO = this, Request = createRequest, Session = _cDOSession});
+                    BeforeCreate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
                     await DoRequest(createRequest, ProcessCRUDResponse);
-                    AfterCreate?.Invoke(this, new CDOEventArgs<T, D, R> {CDO = this, Request = createRequest, Session = _cDOSession});
+                    AfterCreate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
                 }
                 //update
                 if (TableReference._changed.Any())
@@ -890,6 +890,13 @@ namespace NCDO.Interfaces
                         _cdoMemory = new D();
                     }
                     _cdoMemory.Init(request.Response);
+                }
+                else
+                {
+                    if (AutoApplyChanges)
+                    {
+                        await SaveChanges();
+                    }
                 }
         }
 
