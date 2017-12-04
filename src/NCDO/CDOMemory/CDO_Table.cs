@@ -296,10 +296,10 @@ namespace NCDO.CDOMemory
                 {
                     if (!Contains(list, item))
                     {
-                        if(rowState == DataRowState.Modified)
-                            item.Add("prods:id", item.GetId());
-                        item.Add("prods:rowState", rowState.ToString().ToLowerInvariant());
-                        item.Add("prods:clientId", item.GetId());
+                        if (rowState == DataRowState.Modified)
+                            item["prods:id"] = item.GetId();
+                        item["prods:rowState"] = rowState.ToString().ToLowerInvariant();
+                        item["prods:clientId"] = item.GetId();
                         list.Add(item);
                     }
                 }
