@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Data;
 using System.IO;
 using System.Json;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Reflection;
 using NCDO.Definitions;
 using NCDO.Extensions;
 using NCDO.Interfaces;
+using DataRowState = NCDO.Definitions.DataRowState;
 
 namespace NCDO.CDOMemory
 {
@@ -229,27 +231,27 @@ namespace NCDO.CDOMemory
             switch (action)
             {
                 case NotifyCollectionChangedAction.Add:
-                    AddNew(_new, items);
+                    AddNew(_new, items, DataRowState.Created);
                     break;
                 case NotifyCollectionChangedAction.Move:
                     if (items != null)
                         foreach (var item in items)
                         {
-                            if (!_new.Any(r => r.GetId() == item.GetId()))
-                                AddNew(_changed, new[] { item });
+                            if (_new.All(r => r.GetId() != item.GetId()))
+                                AddNew(_changed, new[] { item }, DataRowState.Modified);
                         }
                     break;
                 case NotifyCollectionChangedAction.Remove:
                     if (index != -1)
-                        AddNew(_deleted, new[] { _list[index] });
-                    AddNew(_deleted, items);
+                        AddNew(_deleted, new[] { _list[index] }, DataRowState.Deleted);
+                    AddNew(_deleted, items, DataRowState.Deleted);
                     break;
                 case NotifyCollectionChangedAction.Replace:
-                    AddNew(_changed, items);
-                    AddNew(_deleted, new[] { _list[index] });
+                    AddNew(_changed, items, DataRowState.Modified);
+                    AddNew(_deleted, new[] { _list[index] }, DataRowState.Deleted);
                     break;
                 case NotifyCollectionChangedAction.Reset:
-                    AddNew(_deleted, items);
+                    AddNew(_deleted, items, DataRowState.Deleted);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(action), action, null);
@@ -286,14 +288,20 @@ namespace NCDO.CDOMemory
             }
         }
 
-        private void AddNew(IList<T> list, IEnumerable<T> items)
+        private void AddNew(IList<T> list, IEnumerable<T> items, Definitions.DataRowState rowState)
         {
             if (items != null)
             {
                 foreach (var item in items)
                 {
                     if (!Contains(list, item))
+                    {
+                        if(rowState == DataRowState.Modified)
+                            item.Add("prods:id", item.GetId());
+                        item.Add("prods:rowState", rowState.ToString().ToLowerInvariant());
+                        item.Add("prods:clientId", item.GetId());
                         list.Add(item);
+                    }
                 }
             }
         }
