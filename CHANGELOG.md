@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-## [0.0.22 - 2017-12-04]
+## [1.0.22 - 2017-12-04]
 ### Added
 - add rowstate to cdo_record
 
