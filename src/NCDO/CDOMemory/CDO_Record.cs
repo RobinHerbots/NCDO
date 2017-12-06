@@ -7,7 +7,6 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Json;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using NCDO.Extensions;
 using NCDO.Interfaces;
 using JsonPair = System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>;
@@ -75,9 +74,9 @@ namespace NCDO.CDOMemory
         }
 
         /// <inheritdoc />
-        public void Assign()
+        public void Assign(IEnumerable<KeyValuePair<string, JsonValue>> values)
         {
-            throw new NotImplementedException();
+            this.AddRange(values);
         }
 
         /// <inheritdoc />

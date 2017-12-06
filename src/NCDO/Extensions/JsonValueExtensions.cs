@@ -9,7 +9,12 @@ namespace NCDO.Extensions
     {
         public static JsonValue Get(this JsonValue jsonValue, string key)
         {
-            return jsonValue.ContainsKey(key) ? jsonValue[key] : new JsonPrimitive((string)null);
+            return jsonValue.ContainsKey(key) ? jsonValue[key] : new JsonPrimitive((string) null);
+        }
+
+        internal static void Set(this JsonValue jsonValue, string key, JsonValue value)
+        {
+            jsonValue[key] = value;
         }
     }
 }

@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Json;
 
 namespace NCDO.Interfaces
 {
@@ -19,10 +21,11 @@ namespace NCDO.Interfaces
         /// Accepts changes to the data in CDO memory for a specified record object.
         /// </summary>
         void AcceptRowChanges();
+
         /// <summary>
         /// Updates field values for the specified CloudDataRecord object in CDO memory.
         /// </summary>
-        void Assign();
+        void Assign(IEnumerable<KeyValuePair<string, JsonValue>> values);
         /// <summary>
         /// Returns any before-image error string in the data of a record
         /// object referenced in CDO memory that was set as the result

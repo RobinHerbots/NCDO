@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Json;
 using System.Linq;
@@ -14,7 +15,8 @@ using DataRowState = NCDO.Definitions.DataRowState;
 
 namespace NCDO.CDOMemory
 {
-    public class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking where T : CDO_Record, new()
+    public class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking
+        where T : CDO_Record, new()
     {
         protected List<T> _list;
         internal List<T> _new = new List<T>();
@@ -68,7 +70,6 @@ namespace NCDO.CDOMemory
         /// <param name="notify"></param>
         public void Add(T item, MergeMode mergeMode, bool notify = true)
         {
-
             if (!Contains(item))
             {
                 _list.Add(item);
@@ -102,6 +103,7 @@ namespace NCDO.CDOMemory
                 }
             }
         }
+
         /// <summary>
         /// Detect changes from childrecords
         /// </summary>
@@ -226,7 +228,8 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
-        protected virtual void OnCollectionChanged(NotifyCollectionChangedAction action, IEnumerable<T> items = null, int index = -1)
+        protected virtual void OnCollectionChanged(NotifyCollectionChangedAction action, IEnumerable<T> items = null,
+            int index = -1)
         {
             switch (action)
             {
@@ -260,13 +263,16 @@ namespace NCDO.CDOMemory
 
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(action, items, index));
         }
+
         private void OnCollectionChanged(object sender, PropertyChangedEventArgs e)
         {
             OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { (T)sender });
         }
+
         #endregion
 
         #region private
+
         /// <summary>
         /// merge record into the target record.
         /// </summary>
@@ -278,11 +284,13 @@ namespace NCDO.CDOMemory
         {
             if (source != null)
             {
-                foreach (var propertyInfo in target.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
+                foreach (var propertyInfo in target.GetType()
+                    .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
                 {
                     if (propertyInfo.CanRead && propertyInfo.CanWrite && !target.IsPropertyChanged(propertyInfo.Name))
                     {
-                        propertyInfo.SetValue(target, propertyInfo.GetValue(source));
+                        var sourceValue = propertyInfo.GetValue(source);
+                        propertyInfo.SetValue(target, sourceValue);
                     }
                 }
             }
@@ -297,9 +305,9 @@ namespace NCDO.CDOMemory
                     if (!Contains(list, item))
                     {
                         if (rowState == DataRowState.Modified)
-                            item["prods:id"] = item.GetId();
-                        item["prods:rowState"] = rowState.ToString().ToLowerInvariant();
-                        item["prods:clientId"] = item.GetId();
+                            item.Set("prods:id", item.GetId());
+                        item.Set("prods:rowState", rowState.ToString().ToLowerInvariant());
+                        item.Set("prods:clientId", item.GetId());
                         list.Add(item);
                     }
                 }
@@ -326,6 +334,7 @@ namespace NCDO.CDOMemory
 
         /// <inheritdoc />
         public bool IsChanged => _changed.Count > 0 || _deleted.Count > 0;
+
         #endregion
 
         public void RejectChanges()
