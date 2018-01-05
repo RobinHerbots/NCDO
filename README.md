@@ -1,5 +1,5 @@
 # NCDO
-Copyright (c) 2017 Robin Herbots Licensed under the MIT license (http://opensource.org/licenses/mit-license.php)  
+Copyright (c) 2017 - 2018 Robin Herbots Licensed under the MIT license (http://opensource.org/licenses/mit-license.php)  
   
 The NCDO is a .NET implementation of the <a href="https://github.com/CloudDataObject/CDO">CDO Specification</a> published by Progress Software Corporation. 
 The NCDO is a free and open-source implementation that can be used in .NET. 
