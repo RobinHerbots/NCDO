@@ -30,17 +30,21 @@ namespace NCDO.CDOMemory
 
         protected internal string primaryKey;
 
-        private void SetPrimaryKey()
+        private void InitializeRecord()
         {
-            if (string.IsNullOrEmpty(primaryKey))
+            var props = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            foreach (var propertyInfo in props)
             {
-                var props = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-                foreach (var propertyInfo in props)
-                    if (propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
-                    {
-                        primaryKey = propertyInfo.Name;
-                        break;
-                    }
+                if (string.IsNullOrEmpty(primaryKey) && propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
+                {
+                    primaryKey = propertyInfo.Name;
+                }
+
+                var defaultValueAttribute = propertyInfo.GetCustomAttribute<DefaultValueAttribute>();
+                if (defaultValueAttribute != null)
+                {
+                    propertyInfo.SetValue(this, defaultValueAttribute.Value);
+                }
             }
         }
 
@@ -48,17 +52,17 @@ namespace NCDO.CDOMemory
 
         public CDO_Record(params JsonPair[] items) : base(items)
         {
-            SetPrimaryKey();
+            InitializeRecord();
         }
 
         public CDO_Record(JsonPairEnumerable items) : base(items)
         {
-            SetPrimaryKey();
+            InitializeRecord();
         }
 
         public CDO_Record()
         {
-            SetPrimaryKey();
+            InitializeRecord();
         }
 
         #endregion
@@ -129,7 +133,10 @@ namespace NCDO.CDOMemory
         {
             if (key == null)
                 throw new ArgumentNullException(nameof(key));
-            if (ContainsKey(key)) OnPropertyChanging(key);
+            if (ContainsKey(key))
+            {
+                OnPropertyChanging(key); base.Remove(key);
+            }
             base.Add(key, value);
             if (IsPropertyChanged(key)) OnPropertyChanged(key);
         }
