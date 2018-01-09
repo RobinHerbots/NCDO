@@ -6,15 +6,42 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Json;
+using System.Linq.Expressions;
 using System.Reflection;
 using NCDO.Extensions;
 using NCDO.Interfaces;
 using JsonPair = System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>;
-using JsonPairEnumerable =
-    System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>>;
+using JsonPairEnumerable = System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>>;
 
 namespace NCDO.CDOMemory
 {
+    public class CDO_Record<T> : CDO_Record where T : class
+    {
+        #region Constructor
+        public CDO_Record(params JsonPair[] items) : base(items)
+        {
+        }
+
+        public CDO_Record(JsonPairEnumerable items) : base(items)
+        {
+        }
+
+        public CDO_Record()
+        {
+        }
+
+        #endregion
+
+        public virtual object Default(Expression<Func<T, object>> propertyExpression)
+        {
+            var property = propertyExpression.Body as UnaryExpression;
+            var propExp = property?.Operand as MemberExpression;
+            var defaultValueAttribute = propExp?.Member.GetCustomAttribute<DefaultValueAttribute>();
+            return defaultValueAttribute?.Value;
+        }
+    }
+
+
     public class CDO_Record : JsonObject, ICloudDataRecord
     {
         internal Dictionary<string, JsonValue> _changeDict = new Dictionary<string, JsonValue>();
@@ -49,7 +76,6 @@ namespace NCDO.CDOMemory
         }
 
         #region Constructor
-
         public CDO_Record(params JsonPair[] items) : base(items)
         {
             InitializeRecord();
