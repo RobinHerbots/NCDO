@@ -165,15 +165,14 @@ namespace NCDO.CDOMemory
         public bool Remove(T item)
         {
             var index = IndexOf(item);
-            _list.RemoveAt(index);
-            OnCollectionChanged(NotifyCollectionChangedAction.Remove, new[] { item });
+            RemoveAt(index);
             return true;
         }
 
         public void RemoveAt(int index)
         {
-            _list.RemoveAt(index);
             OnCollectionChanged(NotifyCollectionChangedAction.Remove, null, index);
+            _list.RemoveAt(index);
         }
 
         public void AddRange(IEnumerable<T> items)
