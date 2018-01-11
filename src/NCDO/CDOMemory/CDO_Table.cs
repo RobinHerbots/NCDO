@@ -303,6 +303,12 @@ namespace NCDO.CDOMemory
                 {
                     if (!Contains(list, item))
                     {
+                        if (rowState == DataRowState.Created)
+                        {
+                            //Temp-table defined with "like" takes the indices from the table and thus need to be unique
+                            //add a negative generated id
+                            item.Set(item.primaryKey, (list.Count + 1) * -1);
+                        }
                         if (rowState == DataRowState.Modified)
                             item.Set("prods:id", item.GetId());
                         item.Set("prods:rowState", rowState.ToString().ToLowerInvariant());
