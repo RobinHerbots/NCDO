@@ -39,6 +39,10 @@ namespace NCDO.CDOMemory
             var defaultValueAttribute = propExp?.Member.GetCustomAttribute<DefaultValueAttribute>();
             return defaultValueAttribute?.Value;
         }
+
+        #region Overrides of CDO_Record
+
+        #endregion
     }
 
 
@@ -48,7 +52,7 @@ namespace NCDO.CDOMemory
         /// <summary>
         ///     An internal field for the CDO that is provided to find a given record in its memory.
         /// </summary>
-        private readonly string _id = Guid.NewGuid().ToString();
+        protected readonly string _id = Guid.NewGuid().ToString();
 
         /// <summary>
         ///     Used by the CDO to do automatic data mapping for any error string passed back from backend with before-imaging data
@@ -121,7 +125,10 @@ namespace NCDO.CDOMemory
             if (string.IsNullOrEmpty(primaryKey))
                 return _id;
             var pkValue = this.Get(primaryKey).ToString().Trim('"');
-            return string.IsNullOrEmpty(pkValue) ? _id : pkValue;
+            var defaultValueAttribute = this.GetType().GetProperty(primaryKey, BindingFlags.Public | BindingFlags.Instance)?.GetCustomAttribute<DefaultValueAttribute>();
+            return defaultValueAttribute != null
+                ? (defaultValueAttribute.Value.ToString() == pkValue ? _id : pkValue)
+                : (string.IsNullOrEmpty(pkValue) ? _id : pkValue);
         }
 
         /// <inheritdoc />
