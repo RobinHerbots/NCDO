@@ -13,6 +13,8 @@
     <RepositoryUrl>https://github.com/RobinHerbots/NCDO</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>CDO CloudDataObject openedge .NET</PackageTags>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>openedge.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <ItemGroup>
