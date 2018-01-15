@@ -292,6 +292,14 @@ namespace NCDO.Interfaces
         Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch);
 
         /// <summary>
+        ///     Searches for a record in a table referenced in CDO memory
+        ///     and returns a reference to a dataset with all related data from the record if found. If no record
+        ///     is found, it returns null.
+        /// </summary>
+        /// <returns></returns>
+        Task<D> Get(Expression<Func<R, bool>> filter, bool autoFetch);
+
+        /// <summary>
         ///     Locates and returns the record in CDO memory with the
         ///     internal ID you specify.
         /// </summary>
@@ -569,7 +577,7 @@ namespace NCDO.Interfaces
         {
             return await Fill(new QueryRequest() { ABLFilter = filter.ToABLFIlter() });
         }
-
+        /// <inheritdoc />
         public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false)
         {
             var table = _cdoMemory?.Get(_mainTable);
@@ -584,6 +592,20 @@ namespace NCDO.Interfaces
             }
 
             return record;
+        }
+
+        /// <inheritdoc />
+        public async Task<D> Get(Expression<Func<R, bool>> filter, bool autoFetch)
+        {
+            var read = await Read(filter);
+            if (read.Success.HasValue && read.Success.Value)
+            {
+                var ds = new D();
+                ds.Init(read.Response);
+                return ds;
+            }
+
+            return null;
         }
 
         public async Task<R> FindById(string id, bool autoFetch = false)
