@@ -15,7 +15,7 @@ using JsonPairEnumerable = System.Collections.Generic.IEnumerable<System.Collect
 
 namespace NCDO.CDOMemory
 {
-    public class CDO_Record<T> : CDO_Record where T : class
+    public partial class CDO_Record<T> : CDO_Record where T : class
     {
         #region Constructor
         public CDO_Record(params JsonPair[] items) : base(items)

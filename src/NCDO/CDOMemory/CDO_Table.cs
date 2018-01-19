@@ -15,7 +15,7 @@ using DataRowState = NCDO.Definitions.DataRowState;
 
 namespace NCDO.CDOMemory
 {
-    public class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking
+    public partial class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking
         where T : CDO_Record, new()
     {
         protected List<T> _list;
@@ -70,36 +70,39 @@ namespace NCDO.CDOMemory
         /// <param name="notify"></param>
         public void Add(T item, MergeMode mergeMode, bool notify = true)
         {
-            if (!Contains(item))
+            lock (_list)
             {
-                _list.Add(item);
-                item.PropertyChanged -= Item_PropertyChanged;
-                item.PropertyChanged += Item_PropertyChanged;
-                if (notify)
-                    OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] { item });
-            }
-            else
-            {
-                var index = IndexOf(item);
-                switch (mergeMode)
+                if (!Contains(item))
                 {
-                    case MergeMode.Empty:
-                        break;
-                    case MergeMode.Append:
-                        throw new CDOException($"Duplicate record with ID {item.GetId()}");
-                    case MergeMode.Merge:
-                        Merge(this[index], item);
-                        if (notify)
-                            OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] { this[index] }, index);
-                        break;
-                    case MergeMode.Replace:
-                        RemoveAt(index);
-                        _list.Add(item);
-                        if (notify)
-                            OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] { item }, index);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException(nameof(mergeMode), mergeMode, null);
+                    _list.Add(item);
+                    item.PropertyChanged -= Item_PropertyChanged;
+                    item.PropertyChanged += Item_PropertyChanged;
+                    if (notify)
+                        OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] { item });
+                }
+                else
+                {
+                    var index = IndexOf(item);
+                    switch (mergeMode)
+                    {
+                        case MergeMode.Empty:
+                            break;
+                        case MergeMode.Append:
+                            throw new CDOException($"Duplicate record with ID {item.GetId()}");
+                        case MergeMode.Merge:
+                            Merge(this[index], item);
+                            if (notify)
+                                OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] { this[index] }, index);
+                            break;
+                        case MergeMode.Replace:
+                            RemoveAt(index);
+                            _list.Add(item);
+                            if (notify)
+                                OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] { item }, index);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(mergeMode), mergeMode, null);
+                    }
                 }
             }
         }
@@ -239,21 +242,30 @@ namespace NCDO.CDOMemory
                     if (items != null)
                         foreach (var item in items)
                         {
-                            if (_new.All(r => r.GetId() != item.GetId()))
-                                AddNew(_changed, new[] { item }, DataRowState.Modified);
+                            lock (_new)
+                            {
+                                if (_new.All(r => r.GetId() != item.GetId()))
+                                {
+                                    AddNew(_changed, new[] { item }, DataRowState.Modified);
+                                }
+                            }
                         }
+
                     break;
                 case NotifyCollectionChangedAction.Remove:
                     if (index != -1)
                         AddNew(_deleted, new[] { _list[index] }, DataRowState.Deleted);
                     AddNew(_deleted, items, DataRowState.Deleted);
+
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     AddNew(_changed, items, DataRowState.Modified);
                     AddNew(_deleted, new[] { _list[index] }, DataRowState.Deleted);
+
                     break;
                 case NotifyCollectionChangedAction.Reset:
                     AddNew(_deleted, items, DataRowState.Deleted);
+
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(action), action, null);
@@ -301,13 +313,16 @@ namespace NCDO.CDOMemory
             {
                 foreach (var item in items)
                 {
-                    if (!Contains(list, item))
+                    lock (list)
                     {
-                        if (rowState == DataRowState.Modified)
-                            item.Set("prods:id", item.GetId());
-                        item.Set("prods:rowState", rowState.ToString().ToLowerInvariant());
-                        item.Set("prods:clientId", item.GetId()); //defines the id used on the client
-                        list.Add(item);
+                        if (!Contains(list, item))
+                        {
+                            if (rowState == DataRowState.Modified)
+                                item.Set("prods:id", item.GetId());
+                            item.Set("prods:rowState", rowState.ToString().ToLowerInvariant());
+                            item.Set("prods:clientId", item.GetId()); //defines the id used on the client
+                            list.Add(item);
+                        }
                     }
                 }
             }
@@ -315,8 +330,11 @@ namespace NCDO.CDOMemory
 
         private bool Contains(IList<T> list, T item)
         {
-            var itemId = item.GetId();
-            return list.Any(i => i.GetId() == itemId);
+            lock (list)
+            {
+                var itemId = item.GetId();
+                return list.Any(i => i.GetId() == itemId);
+            }
         }
 
         #endregion

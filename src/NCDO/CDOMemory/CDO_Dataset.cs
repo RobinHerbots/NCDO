@@ -12,7 +12,7 @@ namespace NCDO.CDOMemory
     /// <summary>
     /// CDO in memory implementation (Dataset)
     /// </summary>
-    public class CDO_Dataset : JsonObject
+    public partial class CDO_Dataset : JsonObject
     {
 
         #region Constructor

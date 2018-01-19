@@ -297,7 +297,7 @@ namespace NCDO.Interfaces
         ///     is found, it returns null.
         /// </summary>
         /// <returns></returns>
-        Task<D> Get(Expression<Func<R, bool>> filter, bool autoFetch);
+        Task<D> Get(Expression<Func<R, bool>> filter);
 
         /// <summary>
         ///     Locates and returns the record in CDO memory with the
@@ -595,7 +595,7 @@ namespace NCDO.Interfaces
         }
 
         /// <inheritdoc />
-        public async Task<D> Get(Expression<Func<R, bool>> filter, bool autoFetch)
+        public async Task<D> Get(Expression<Func<R, bool>> filter)
         {
             var read = await Read(filter);
             if (read.Success.HasValue && read.Success.Value)
