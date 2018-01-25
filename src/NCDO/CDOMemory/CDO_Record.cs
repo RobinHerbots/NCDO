@@ -77,7 +77,7 @@ namespace NCDO.CDOMemory
                     var targetType = propertyInfo.PropertyType.IsNullableType()
                         ? Nullable.GetUnderlyingType(propertyInfo.PropertyType)
                         : propertyInfo.PropertyType;
-                    propertyInfo.SetValue(this, Convert.ChangeType(defaultValueAttribute.Value, targetType));
+                    propertyInfo.SetValue(this, defaultValueAttribute.Value != null ? Convert.ChangeType(defaultValueAttribute.Value, targetType) : defaultValueAttribute.Value);
                 }
             }
         }
