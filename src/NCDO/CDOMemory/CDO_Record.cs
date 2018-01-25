@@ -72,9 +72,12 @@ namespace NCDO.CDOMemory
                 }
 
                 var defaultValueAttribute = propertyInfo.GetCustomAttribute<DefaultValueAttribute>();
-                if (defaultValueAttribute != null)
+                if (defaultValueAttribute != null && propertyInfo.CanWrite)
                 {
-                    propertyInfo.SetValue(this, defaultValueAttribute.Value);
+                    var targetType = propertyInfo.PropertyType.IsNullableType()
+                        ? Nullable.GetUnderlyingType(propertyInfo.PropertyType)
+                        : propertyInfo.PropertyType;
+                    propertyInfo.SetValue(this, Convert.ChangeType(defaultValueAttribute.Value, targetType));
                 }
             }
         }
