@@ -325,6 +325,11 @@ namespace NCDO.Interfaces
         ///     memory.
         /// </summary>
         bool Remove(R record);
+
+        /// <summary>
+        /// Reset CDO Memory
+        /// </summary>
+        void Reset();
         #endregion
 
         #region Properties
@@ -503,6 +508,16 @@ namespace NCDO.Interfaces
         public bool UseRelationships { get; set; }
 
         public R Record { get; set; }
+
+        /// <inheritdoc />
+        public void Reset()
+        {
+            if (_cdoMemory != null)
+            {
+                _cdoMemory.Clear();
+                _cdoMemory = null;
+            }
+        }
 
         public CDO_Table<R> TableReference => _cdoMemory?.Get(_mainTable) as CDO_Table<R>;
 

@@ -344,9 +344,12 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public void AcceptChanges()
         {
-            _new.Clear();
-            _changed.Clear();
-            _deleted.Clear();
+            lock (_new)
+            {
+                _new.Clear();
+                _changed.Clear();
+                _deleted.Clear();
+            }
         }
 
         /// <inheritdoc />
@@ -356,18 +359,23 @@ namespace NCDO.CDOMemory
 
         public void RejectChanges()
         {
-            foreach (var record in _new)
+            lock (_new)
             {
-                var index = IndexOf(record);
-                _list.RemoveAt(index);
+                foreach (var record in _new)
+                {
+                    var index = IndexOf(record);
+                    _list.RemoveAt(index);
+                }
+
+                foreach (var record in _changed)
+                {
+                    record.RejectRowChanges();
+                }
+
+                _changed.Clear();
+                AddRange(_deleted);
+                _deleted.Clear();
             }
-            foreach (var record in _changed)
-            {
-                record.RejectRowChanges();
-            }
-            _changed.Clear();
-            AddRange(_deleted);
-            _deleted.Clear();
         }
     }
 }
