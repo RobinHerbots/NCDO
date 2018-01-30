@@ -317,11 +317,18 @@ namespace NCDO.CDOMemory
                     {
                         if (!Contains(list, item))
                         {
+                            var itemClone = item;
+                            if (rowState == DataRowState.Deleted)
+                            {
+                                itemClone = new T();
+                                itemClone.AddRange(item.Data);
+                            }
+
                             if (rowState == DataRowState.Modified)
-                                item.Set("prods:id", item.GetId());
-                            item.Set("prods:rowState", rowState.ToString().ToLowerInvariant());
-                            item.Set("prods:clientId", item.GetId()); //defines the id used on the client
-                            list.Add(item);
+                                itemClone.Set("prods:id", item.GetId());
+                            itemClone.Set("prods:rowState", rowState.ToString().ToLowerInvariant());
+                            itemClone.Set("prods:clientId", item.GetId()); //defines the id used on the client
+                            list.Add(itemClone);
                         }
                     }
                 }
@@ -377,5 +384,11 @@ namespace NCDO.CDOMemory
                 _deleted.Clear();
             }
         }
+
+        #region Convenience mappers
+        public IReadOnlyList<T> New => _new;
+        public IReadOnlyList<T> Modified => _changed;
+        public IReadOnlyList<T> Deleted => _deleted; 
+        #endregion
     }
 }
