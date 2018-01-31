@@ -35,7 +35,7 @@ namespace NCDO.CDOMemory
         public virtual object Default(Expression<Func<T, object>> propertyExpression)
         {
             var property = propertyExpression.Body as UnaryExpression;
-            var propExp = property?.Operand as MemberExpression;
+            MemberExpression propExp = (property?.Operand as MemberExpression) ?? propertyExpression.Body as MemberExpression;
             var defaultValueAttribute = propExp?.Member.GetCustomAttribute<DefaultValueAttribute>();
             return defaultValueAttribute?.Value;
         }
