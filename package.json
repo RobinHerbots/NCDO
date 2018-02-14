@@ -1,11 +1,11 @@
 {
   "name": "ncdo",
-  "version": "1.0.40",
+  "version": "1.0.41",
   "description": ".NET Implementation of the CloudDataObject (CDO) used by Progress OpenEdge.",
   "main": "index.js",
   "dependencies": {},
   "devDependencies": {
-    "grunt": "^1.0.1",
+    "grunt": "^1.0.2",
     "grunt-available-tasks": "^0.6.3",
     "grunt-bump": "^0.8.0",
     "grunt-cli": "^1.2.0",
@@ -13,7 +13,7 @@
     "grunt-msbuild": "^0.4.4",
     "grunt-nuget": "^0.3.0",
     "load-grunt-tasks": "^3.5.2",
-    "ncdo_clientgen": "0.0.22"
+    "ncdo_clientgen": "^1.0.30"
   },
   "scripts": {
     "start": "grunt",
