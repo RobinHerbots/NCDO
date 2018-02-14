@@ -905,7 +905,7 @@ namespace NCDO.Interfaces
         {
             request.Success = response.IsSuccessStatusCode;
             request.ResponseMessage = response;
-            if (response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode && response.Content.Headers.ContentLength > 0)
                 using (var dataStream = await response.Content.ReadAsStreamAsync())
                 {
                     if (dataStream != null)
