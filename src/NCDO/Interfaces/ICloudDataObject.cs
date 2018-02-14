@@ -603,7 +603,7 @@ namespace NCDO.Interfaces
             if (record == null && autoFetch)
             {
                 await Fill(filter);
-                record = await Find(filter);
+                return await Find(filter);
             }
 
             return record;
