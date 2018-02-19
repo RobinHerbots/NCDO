@@ -39,14 +39,10 @@ namespace NCDO.CDOMemory
             var defaultValueAttribute = propExp?.Member.GetCustomAttribute<DefaultValueAttribute>();
             return defaultValueAttribute?.Value;
         }
-
-        #region Overrides of CDO_Record
-
-        #endregion
     }
 
 
-    public class CDO_Record : JsonObject, ICloudDataRecord
+    public class CDO_Record : JsonObject, ICloudDataRecord, IEquatable<CDO_Record>
     {
         internal Dictionary<string, JsonValue> _changeDict = new Dictionary<string, JsonValue>();
         /// <summary>
@@ -208,6 +204,30 @@ namespace NCDO.CDOMemory
 
         /// <inheritdoc />
         public bool IsChanged => _changeDict.Count > 0;
+        #endregion
+
+        #region Equality members
+
+        /// <inheritdoc />
+        public virtual bool Equals(CDO_Record other)
+        {
+            if (ReferenceEquals(null, other)) return false;
+            if (ReferenceEquals(this, other)) return true;
+            return string.Equals(GetId(), other.GetId());
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != this.GetType()) return false;
+            return Equals((CDO_Record) obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode() => (GetId() != null ? GetId().GetHashCode() : 0);
+
         #endregion
     }
 }

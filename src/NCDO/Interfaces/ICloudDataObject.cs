@@ -919,8 +919,16 @@ namespace NCDO.Interfaces
         {
             await ProcessInvokeResponse(response, request);
             if (request.Success.HasValue && request.Success.Value)
-                if (request.Method == HttpMethod.Get)
+                if (request.Method == HttpMethod.Get || request.Method == HttpMethod.Post || request.Method == HttpMethod.Put)
                 {
+                    if (request.Method == HttpMethod.Post)
+                    {
+                        foreach (R r in TableReference.New)
+                        {
+                            TableReference.Remove(r);
+                        }
+                    }
+
                     if (_cdoMemory == null)
                     {
                         //init cdoMemory

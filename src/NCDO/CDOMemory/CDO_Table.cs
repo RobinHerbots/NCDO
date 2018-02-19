@@ -72,7 +72,7 @@ namespace NCDO.CDOMemory
         {
             lock (_list)
             {
-                if (!Contains(item))
+                if (!_list.Contains(item))
                 {
                     _list.Add(item);
                     item.PropertyChanged -= Item_PropertyChanged;
@@ -125,7 +125,7 @@ namespace NCDO.CDOMemory
             OnCollectionChanged(NotifyCollectionChangedAction.Reset, oldList);
         }
 
-        public bool Contains(T item) => Contains(_list, item);
+        public bool Contains(T item) => _list.Contains(item);
 
         public void CopyTo(T[] array, int arrayIndex)
         {
@@ -144,7 +144,7 @@ namespace NCDO.CDOMemory
 
         public void Insert(int index, T item)
         {
-            if (Contains(item))
+            if (_list.Contains(item))
             {
                 var ndx = IndexOf(item);
                 _list.RemoveAt(ndx);
@@ -315,7 +315,7 @@ namespace NCDO.CDOMemory
                 {
                     lock (list)
                     {
-                        if (!Contains(list, item))
+                        if (!list.Contains(item))
                         {
                             var itemClone = item;
                             if (rowState == DataRowState.Deleted)
