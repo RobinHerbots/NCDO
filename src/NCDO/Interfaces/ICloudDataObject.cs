@@ -5,6 +5,7 @@ using System.Json;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -595,10 +596,9 @@ namespace NCDO.Interfaces
         /// <inheritdoc />
         public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false)
         {
-            var table = _cdoMemory?.Get(_mainTable);
             R record = null;
-            if (table?.JsonType == JsonType.Array)
-                record = table.Cast<R>().FirstOrDefault(filter.Compile());
+            if (TableReference?.JsonType == JsonType.Array)
+                record = TableReference.FirstOrDefault(filter.Compile());
 
             if (record == null && autoFetch)
             {
@@ -625,7 +625,25 @@ namespace NCDO.Interfaces
 
         public async Task<R> FindById(string id, bool autoFetch = false)
         {
-            return await Find(r => r.GetId() == id, autoFetch);
+            var result = await Find(r => r.GetId() == id);
+            if (result == null)
+            {
+                var defaultsFieldInfo = typeof(R).GetField("_defaults",
+                    BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+                var pkFieldInfo = typeof(R).GetField("primaryKey",
+                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+                var primaryKey = (string)pkFieldInfo.GetValue(defaultsFieldInfo.GetValue(null));
+                if (string.IsNullOrEmpty(primaryKey))
+                {
+                    new R();
+                    primaryKey = (string)pkFieldInfo.GetValue(defaultsFieldInfo.GetValue(null));
+                }
+
+                await Fill($"{primaryKey ?? "ID"} = '{id}'");
+                result = await Find(r => r.GetId() == id);
+            }
+
+            return result;
         }
 
         public R[] GetData()
@@ -945,13 +963,11 @@ namespace NCDO.Interfaces
         private void InitCDO(bool autoFill)
         {
             VerifyResourceName(Name);
-
+            DetermineMainTable();
             if (autoFill)
             {
                 Fill().Wait();
             }
-            DetermineMainTable();
-            _primaryKey = _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties[_mainTable].PrimaryKey.FirstOrDefault();
         }
 
         /// <summary>
@@ -983,6 +999,7 @@ namespace NCDO.Interfaces
             _mainTable = _resourceDefinition.Relations != null
                 ? _resourceDefinition.Relations.FirstOrDefault().ParentName
                 : _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties.FirstOrDefault().Key;
+            _primaryKey = _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties[_mainTable].PrimaryKey.FirstOrDefault();
         }
 
         #endregion

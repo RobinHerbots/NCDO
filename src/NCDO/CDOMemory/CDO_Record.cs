@@ -6,8 +6,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Json;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using NCDO.Extensions;
 using NCDO.Interfaces;
 using JsonPair = System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>;
@@ -15,23 +17,60 @@ using JsonPairEnumerable = System.Collections.Generic.IEnumerable<System.Collect
 
 namespace NCDO.CDOMemory
 {
-    public partial class CDO_Record<T> : CDO_Record where T : class
+    public partial class CDO_Record<T> : CDO_Record where T : CDO_Record, new()
     {
         #region Constructor
-        public CDO_Record(params JsonPair[] items) : base(items)
+        public CDO_Record(params JsonPair[] items) : this()
         {
+            AddRange(items);
         }
 
-        public CDO_Record(JsonPairEnumerable items) : base(items)
+        public CDO_Record(JsonPairEnumerable items) : this()
         {
+            AddRange(items);
         }
 
         public CDO_Record()
         {
+            if(_defaults !=null) InitializeRecord(); //only initialize after _defaults instantiation
         }
 
         #endregion
 
+        protected static T _defaults = new T();
+        private void InitializeRecord()
+        {
+            lock (_defaults)
+            {
+                if (_defaults.Count == 0)
+                {
+                    var props = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
+                    foreach (var propertyInfo in props)
+                    {
+                        if (string.IsNullOrEmpty(primaryKey) &&
+                            propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
+                        {
+                            _defaults.primaryKey = propertyInfo.Name;
+                        }
+
+                        var defaultValueAttribute = propertyInfo.GetCustomAttribute<DefaultValueAttribute>();
+                        if (defaultValueAttribute != null && propertyInfo.CanWrite)
+                        {
+                            var targetType = propertyInfo.PropertyType.IsNullableType()
+                                ? Nullable.GetUnderlyingType(propertyInfo.PropertyType)
+                                : propertyInfo.PropertyType;
+                            propertyInfo.SetValue(_defaults,
+                            defaultValueAttribute.Value != null
+                                ? Convert.ChangeType(defaultValueAttribute.Value, targetType)
+                                : defaultValueAttribute.Value);
+                        }
+                    }
+                }
+            }
+
+            primaryKey = _defaults.primaryKey;
+            AddRange(_defaults);
+        }
         public virtual object Default(Expression<Func<T, object>> propertyExpression)
         {
             var property = propertyExpression.Body as UnaryExpression;
@@ -39,6 +78,22 @@ namespace NCDO.CDOMemory
             var defaultValueAttribute = propExp?.Member.GetCustomAttribute<DefaultValueAttribute>();
             return defaultValueAttribute?.Value;
         }
+
+        #region Overrides of CDO_Record
+        
+        /// <inheritdoc />
+        public override string GetId()
+        {
+            if (string.IsNullOrEmpty(primaryKey))
+                return _id;
+            var pkValue = this.Get(primaryKey).ToString().Trim('"');
+            var defaultValueAttribute = this.GetType().GetProperty(primaryKey, BindingFlags.Public | BindingFlags.Instance)?.GetCustomAttribute<DefaultValueAttribute>();
+            return defaultValueAttribute != null
+                ? (defaultValueAttribute.Value.ToString() == pkValue ? _id : pkValue)
+                : (string.IsNullOrEmpty(pkValue) ? _id : pkValue);
+        }
+
+        #endregion
     }
 
 
@@ -54,44 +109,22 @@ namespace NCDO.CDOMemory
         ///     Used by the CDO to do automatic data mapping for any error string passed back from backend with before-imaging data
         /// </summary>
         private string _errorString;
-
+        /// <summary>
+        /// this field is used in the generic version of CDO_Record
+        /// </summary>
         protected internal string primaryKey;
-
-        private void InitializeRecord()
-        {
-            var props = GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            foreach (var propertyInfo in props)
-            {
-                if (string.IsNullOrEmpty(primaryKey) && propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
-                {
-                    primaryKey = propertyInfo.Name;
-                }
-
-                var defaultValueAttribute = propertyInfo.GetCustomAttribute<DefaultValueAttribute>();
-                if (defaultValueAttribute != null && propertyInfo.CanWrite)
-                {
-                    var targetType = propertyInfo.PropertyType.IsNullableType()
-                        ? Nullable.GetUnderlyingType(propertyInfo.PropertyType)
-                        : propertyInfo.PropertyType;
-                    propertyInfo.SetValue(this, defaultValueAttribute.Value != null ? Convert.ChangeType(defaultValueAttribute.Value, targetType) : defaultValueAttribute.Value);
-                }
-            }
-        }
 
         #region Constructor
         public CDO_Record(params JsonPair[] items) : base(items)
         {
-            InitializeRecord();
         }
 
         public CDO_Record(JsonPairEnumerable items) : base(items)
         {
-            InitializeRecord();
         }
 
         public CDO_Record()
         {
-            InitializeRecord();
         }
 
         #endregion
@@ -119,16 +152,7 @@ namespace NCDO.CDOMemory
         }
 
         /// <inheritdoc />
-        public virtual string GetId()
-        {
-            if (string.IsNullOrEmpty(primaryKey))
-                return _id;
-            var pkValue = this.Get(primaryKey).ToString().Trim('"');
-            var defaultValueAttribute = this.GetType().GetProperty(primaryKey, BindingFlags.Public | BindingFlags.Instance)?.GetCustomAttribute<DefaultValueAttribute>();
-            return defaultValueAttribute != null
-                ? (defaultValueAttribute.Value.ToString() == pkValue ? _id : pkValue)
-                : (string.IsNullOrEmpty(pkValue) ? _id : pkValue);
-        }
+        public virtual string GetId() => _id;
 
         /// <inheritdoc />
         public void RejectRowChanges()
@@ -222,7 +246,7 @@ namespace NCDO.CDOMemory
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != this.GetType()) return false;
-            return Equals((CDO_Record) obj);
+            return Equals((CDO_Record)obj);
         }
 
         /// <inheritdoc />
