@@ -114,7 +114,7 @@ namespace NCDO
         public async Task Logout()
         {
             ThrowIfDisposed();
-            throw new NotImplementedException();
+            //throw new NotImplementedException(); 
         }
 
         public void Ping()
