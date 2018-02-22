@@ -923,6 +923,7 @@ namespace NCDO.Interfaces
         {
             request.Success = response.IsSuccessStatusCode;
             request.ResponseMessage = response;
+            //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
             if (response.IsSuccessStatusCode && ((response.Headers.TransferEncodingChunked.HasValue && response.Headers.TransferEncodingChunked.Value) || response.Content.Headers.ContentLength > 0))
                 using (var dataStream = await response.Content.ReadAsStreamAsync())
                 {
