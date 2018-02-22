@@ -18,7 +18,7 @@ namespace NCDO.Interfaces
         /// A string constant that specifies the type of authentication
         ///that the server requires from the Mobile or Web App
         /// </summary>
-        string AuthenticationModel { get; }
+        AuthenticationModel AuthenticationModel { get; }
         /// <summary>
         /// Returns the list of URIs used to load the CDO catalogs
         /// to access the Cloud Data Services provided by the
@@ -90,7 +90,7 @@ namespace NCDO.Interfaces
         /// </summary>
         /// <param name="client"></param>
         /// <param name="request"></param>
-        void OnOpenRequest(HttpClient client, HttpRequestMessage request);
+        Task OnOpenRequest(HttpClient client, HttpRequestMessage request);
 
         /// <summary>
         /// Loads a CDO catalog for a login session established using the login( ) method.

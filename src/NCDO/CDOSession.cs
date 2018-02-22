@@ -10,21 +10,22 @@ using NCDO.Definitions;
 using NCDO.Interfaces;
 using System.Json;
 using System.Reflection;
+using System.Security.Cryptography;
 using NCDO.Catalog;
 using NCDO.Events;
 
 namespace NCDO
 {
     /// <summary>
-    /// Default anonymous session
+    /// Default session // anonymous and basic authentication
     /// </summary>
     public partial class CDOSession : ICDOSession
     {
         #region Constructor
 
-        public CDOSession(Uri serviceUri)
+        public CDOSession(Uri serviceUri, AuthenticationModel authenticationModel = AuthenticationModel.Anonymous)
         {
-            AuthenticationModel = Definitions.AuthenticationModel.AUTH_TYPE_ANON;
+            AuthenticationModel = authenticationModel;
             ServiceURI = serviceUri;
             Instance = this; //used by cdo when no session object is passed
 
@@ -38,12 +39,17 @@ namespace NCDO
         #endregion
 
         public string UserName { get; private set; }
+        private string _password;
         public HttpClient HttpClient { get; }
 
         private readonly Dictionary<Uri, ICDOCatalog> _catalogs = new Dictionary<Uri, ICDOCatalog>();
-        public virtual void OnOpenRequest(HttpClient client, HttpRequestMessage request)
+        public virtual async Task OnOpenRequest(HttpClient client, HttpRequestMessage request)
         {
             //add authorization if needed
+            if (AuthenticationModel == Definitions.AuthenticationModel.Basic)
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue(AuthenticationSchemes.Basic.ToString(), $"{ Convert.ToBase64String(Encoding.UTF8.GetBytes($"{UserName}:{_password}"))}");
+            }
         }
 
         public async Task AddCatalog(Uri catalogUri, string userName = null, string password = null)
@@ -74,18 +80,19 @@ namespace NCDO
         public async Task Login(string userName = null, string password = null)
         {
             ThrowIfDisposed();
-            if (AuthenticationModel != Definitions.AuthenticationModel.AUTH_TYPE_ANON)
+            if (AuthenticationModel == AuthenticationModel.Basic)
             {
                 if (userName == null) throw new ArgumentNullException(nameof(userName));
                 if (password == null) throw new ArgumentNullException(nameof(password));
             }
 
             UserName = userName;
-
+            _password = password;
             var urlBuilder = new StringBuilder(ServiceURI.AbsoluteUri);
             using (var request = new HttpRequestMessage())
             {
                 await PrepareLoginRequest(request, urlBuilder);
+                await OnOpenRequest(HttpClient, request);
                 var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
                 await ProcessLoginResponse(response);
             }
@@ -119,7 +126,7 @@ namespace NCDO
         public event EventHandler<CDOEventArgs> Online;
         public event EventHandler<CDOOfflineEventArgs> Offline;
 
-        public string AuthenticationModel { get; }
+        public AuthenticationModel AuthenticationModel { get; }
         public ICollection<Uri> CatalogURIs { get; } = new List<Uri>();
         public string ClientContextId { get; set; }
         public ICloudDataObject[] CDOs { get; set; }
