@@ -95,12 +95,11 @@ namespace NCDO.Interfaces
         /// <summary>
         /// Loads a CDO catalog for a login session established using the login( ) method.
         /// </summary>
-        Task AddCatalog(Uri catalogUri, string userName = null, string password = null);
-        Task AddCatalog(Uri[] catalogUris, string userName = null, string password = null);
+        Task AddCatalog(params Uri[] catalogUris);
         /// <summary>
         /// Starts a user login session on the current CDOSession object by sending an HTTP request with user credentials to a URI for a specified Mobile or Web application.
         /// </summary>
-        Task Login(string userName, string password);
+        Task Login();
         /// <summary>
         /// Terminates the login session on the Mobile or Web application managed by the current CDOSession object, and invalidates any session currently maintained by the server.
         /// </summary>

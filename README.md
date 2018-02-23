@@ -13,7 +13,7 @@ Reference the NCDO nuget package in your project.
 In your application the usage is simular as in the documentation of JSDO.
 
 ```
-  var pdSession = new CDOSession(new Uri("http://<pas server url>"));
+  var pdSession = new CDOSession(new CDOSessionOptions() { ServiceUri = new Uri("http://<pas server url>")});
   pdSession.Login().Wait();
   pdSession.AddCatalog(new Uri("http://<catalog url>")).Wait();
             
@@ -26,12 +26,12 @@ In your application the usage is simular as in the documentation of JSDO.
   var resp = cdo.Invoke("InvokeOperation", paramObj).Result;
 ```
 
+### Authentication
+
+The Authentication model is specified in the CDOSessionOptions and passed in the constructor of a CDOSession.
+Currently Anonymous and Basic authentication are supported. 
 
 ### Remarks
-
-NCDO is a wip and thus not feature complete.  
-The current session object implementation is for anonymous authentication only.  
-Other authentication models can be implemented by deriving from CDOSession and overriding the OnOpenRequest function.
 
 Any contributions (code, documentation) is also welcome. 
 

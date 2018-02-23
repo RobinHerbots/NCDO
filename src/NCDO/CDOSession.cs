@@ -17,16 +17,23 @@ using NCDO.Events;
 namespace NCDO
 {
     /// <summary>
-    /// Default session // anonymous and basic authentication
+    /// CDOSession
     /// </summary>
     public partial class CDOSession : ICDOSession
     {
+        private CDOSessionOptions _options;
+
         #region Constructor
 
-        public CDOSession(Uri serviceUri, AuthenticationModel authenticationModel = AuthenticationModel.Anonymous)
+        public CDOSession(CDOSessionOptions options)
         {
-            AuthenticationModel = authenticationModel;
-            ServiceURI = serviceUri;
+            if (AuthenticationModel != AuthenticationModel.Anonymous)
+            {
+                if (_options.ClientId== null) throw new ArgumentNullException(nameof(_options.ClientId));
+                if (_options.ClientSecret == null) throw new ArgumentNullException(nameof(_options.ClientSecret));
+            }
+
+            _options = options;
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
@@ -38,57 +45,40 @@ namespace NCDO
         }
         #endregion
 
-        public string UserName { get; private set; }
-        private string _password;
+        /// <inheritdoc />
+        public Uri ServiceURI => _options.ServiceUri;
+        public string UserName => _options.ClientId;
         public HttpClient HttpClient { get; }
 
         private readonly Dictionary<Uri, ICDOCatalog> _catalogs = new Dictionary<Uri, ICDOCatalog>();
         public virtual async Task OnOpenRequest(HttpClient client, HttpRequestMessage request)
         {
             //add authorization if needed
-            if (AuthenticationModel == Definitions.AuthenticationModel.Basic)
+            if (AuthenticationModel != AuthenticationModel.Anonymous)
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue(AuthenticationSchemes.Basic.ToString(), $"{ Convert.ToBase64String(Encoding.UTF8.GetBytes($"{UserName}:{_password}"))}");
+                request.Headers.Authorization = new AuthenticationHeaderValue(_options.Challenge, _options.ChallengeToken);
             }
         }
 
-        public async Task AddCatalog(Uri catalogUri, string userName = null, string password = null)
-        {
-            ThrowIfDisposed();
-            if (!string.IsNullOrEmpty(userName) && !string.IsNullOrEmpty(password))
-            {
-                await Logout();
-                await Login(userName, password);
-            }
-            if (!_catalogs.ContainsKey(catalogUri))
-            {
-                _catalogs.Add(catalogUri, await CDOCatalog.Load(catalogUri, this));
-            }
-        }
-
-        public async Task AddCatalog(Uri[] catalogUris, string userName = null, string password = null)
+        public async Task AddCatalog(params Uri[] catalogUris)
         {
             ThrowIfDisposed();
             foreach (var catalogUri in catalogUris)
             {
-                await AddCatalog(catalogUri, userName, password);
+                if (!_catalogs.ContainsKey(catalogUri))
+                {
+                    _catalogs.Add(catalogUri, await CDOCatalog.Load(catalogUri, this));
+                }
             }
         }
 
         protected virtual string _loginURI { get; } = "/static/home.html";
 
-        public async Task Login(string userName = null, string password = null)
+        public async Task Login()
         {
             ThrowIfDisposed();
-            if (AuthenticationModel == AuthenticationModel.Basic)
-            {
-                if (userName == null) throw new ArgumentNullException(nameof(userName));
-                if (password == null) throw new ArgumentNullException(nameof(password));
-            }
-
-            UserName = userName;
-            _password = password;
-            var urlBuilder = new StringBuilder(ServiceURI.AbsoluteUri);
+            
+            var urlBuilder = new StringBuilder(_options.ServiceUri.AbsoluteUri);
             using (var request = new HttpRequestMessage())
             {
                 await PrepareLoginRequest(request, urlBuilder);
@@ -126,7 +116,7 @@ namespace NCDO
         public event EventHandler<CDOEventArgs> Online;
         public event EventHandler<CDOOfflineEventArgs> Offline;
 
-        public AuthenticationModel AuthenticationModel { get; }
+        public AuthenticationModel AuthenticationModel => _options.AuthenticationModel;
         public ICollection<Uri> CatalogURIs { get; } = new List<Uri>();
         public string ClientContextId { get; set; }
         public ICloudDataObject[] CDOs { get; set; }
@@ -162,8 +152,6 @@ namespace NCDO
                 return services;
             }
         }
-        public Uri ServiceURI { get; }
-
 
         /// <summary>
         /// Latest initialized CDOSession
