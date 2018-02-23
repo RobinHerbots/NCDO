@@ -28,8 +28,12 @@ In your application the usage is simular as in the documentation of JSDO.
 
 ### Authentication
 
-The Authentication model is specified in the CDOSessionOptions and passed in the constructor of a CDOSession.
-Currently Anonymous and Basic authentication are supported. 
+The Authentication model is specified in the CDOSessionOptions and passed in the constructor of a CDOSession.  
+
+Supported protocols:
+- anonymous
+- basic
+- bearer 
 
 ### Remarks
 

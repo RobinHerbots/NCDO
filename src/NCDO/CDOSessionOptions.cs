@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using NCDO.Definitions;
 
 namespace NCDO
@@ -39,26 +39,13 @@ namespace NCDO
         /// <summary>
         /// Gets or sets the challenge to put in the "WWW-Authenticate" header.
         /// </summary>
-        public string Challenge
-        {
-            get
-            {
-                switch (AuthenticationModel)
-                {
-                    case AuthenticationModel.Basic:
-                        return "Basic";
-                    case AuthenticationModel.Form:
-                        break;
-                    case AuthenticationModel.SingleSignOn:
-                        break;
-                    case AuthenticationModel.Form_SingleSignOn:
-                        break;
-                }
+        public string Challenge => AuthenticationModel.ToString();
 
-                return null;
-            }
-        }
-
+        /// <summary>
+        /// The token passed can be overruled by strictly setting the token in the options
+        /// </summary>
+        private string _token;
+        private TokenCache _tokenCache = new TokenCache();
         /// <summary>
         /// Returns the token to pass in the headers for the given challenge
         /// </summary>
@@ -66,20 +53,30 @@ namespace NCDO
         {
             get
             {
-                switch (AuthenticationModel)
+                if (_token == null)
                 {
-                    case AuthenticationModel.Basic:
-                        return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{ClientId}:{ClientSecret}"));
-                    case AuthenticationModel.Form:
-                        break;
-                    case AuthenticationModel.SingleSignOn:
-                        break;
-                    case AuthenticationModel.Form_SingleSignOn:
-                        break;
+                    switch (AuthenticationModel)
+                    {
+                        case AuthenticationModel.Basic:
+                            if (ClientId == null) throw new ArgumentNullException(nameof(ClientId));
+                            if (ClientSecret == null) throw new ArgumentNullException(nameof(ClientSecret));
+                            return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{ClientId}:{ClientSecret}"));
+                        case AuthenticationModel.Bearer:
+                            if (ClientId == null) throw new ArgumentNullException(nameof(ClientId));
+                            if (ClientSecret == null) throw new ArgumentNullException(nameof(ClientSecret));
+                            if (Authority == null) throw new ArgumentNullException(nameof(Authority));
+                            if (Audience == null) throw new ArgumentNullException(nameof(Audience));
+                            var authContext = new AuthenticationContext(Authority, _tokenCache);
+                            var clientCredential = new ClientCredential(ClientId, ClientSecret);
+                            var tokenResult = authContext.AcquireTokenAsync(Audience, clientCredential).Result;
+                            return tokenResult.AccessToken;
+                            break;
+                    }
                 }
 
-                return null;
+                return _token;
             }
+            set => _token = value; 
         }
     }
 }

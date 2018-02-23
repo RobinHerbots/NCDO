@@ -4,9 +4,7 @@ namespace NCDO.Definitions
     {
         Anonymous,
         Basic,
-        Form,
-        SingleSignOn,
-        Form_SingleSignOn
+        Bearer
     }
 
 }
