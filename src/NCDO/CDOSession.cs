@@ -27,14 +27,14 @@ namespace NCDO
 
         public CDOSession(CDOSessionOptions options)
         {
+            _options = options;
+            Instance = this; //used by cdo when no session object is passed
+
             if (AuthenticationModel != AuthenticationModel.Anonymous)
             {
                 if (_options.ClientId== null) throw new ArgumentNullException(nameof(_options.ClientId));
                 if (_options.ClientSecret == null) throw new ArgumentNullException(nameof(_options.ClientSecret));
             }
-
-            _options = options;
-            Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
             HttpClient = new HttpClient();
