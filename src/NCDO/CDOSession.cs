@@ -10,6 +10,7 @@ using NCDO.Definitions;
 using NCDO.Interfaces;
 using System.Json;
 using System.Reflection;
+using System.Security.Authentication;
 using System.Security.Cryptography;
 using NCDO.Catalog;
 using NCDO.Events;
@@ -31,7 +32,7 @@ namespace NCDO
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
-            HttpClient = new HttpClient();
+            HttpClient = _options.SslProtocols == SslProtocols.None ? new HttpClient() : new HttpClient(new HttpClientHandler(){ SslProtocols = _options.SslProtocols });
             HttpClient.DefaultRequestHeaders.ConnectionClose = false;
             HttpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
             HttpClient.DefaultRequestHeaders.Pragma.Add(NameValueHeaderValue.Parse("no-cache"));

@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Json;
+using System.Net;
 using System.Net.Http;
+using System.Security.Authentication;
 using System.Threading.Tasks;
 using NCDO.Interfaces;
 using NCDO.Extensions;
@@ -27,6 +29,7 @@ namespace NCDO.Catalog
                 request.Method = new HttpMethod("GET");
                 _cDOSession.OnOpenRequest(_cDOSession.HttpClient, request);
                 request.RequestUri = _catalogUri;
+
                 var response = await _cDOSession.HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead);
                 await ProcessResponse(_cDOSession.HttpClient, response);
             }

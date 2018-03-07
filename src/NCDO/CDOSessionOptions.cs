@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Authentication;
 using System.Text;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using NCDO.Definitions;
@@ -78,5 +79,11 @@ namespace NCDO
             }
             set => _token = value; 
         }
+
+        /// <summary>
+        /// Specify SslProtocols required
+        /// Ex: SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls
+        /// </summary>
+        public SslProtocols SslProtocols { get; set; } = SslProtocols.None;
     }
 }
