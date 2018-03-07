@@ -32,7 +32,7 @@ namespace NCDO
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
-            HttpClient = _options.SslProtocols == SslProtocols.None ? new HttpClient() : new HttpClient(new HttpClientHandler(){ SslProtocols = _options.SslProtocols });
+            HttpClient = _options.SslProtocols == SslProtocols.Default ? new HttpClient() : new HttpClient(new HttpClientHandler(){ SslProtocols = _options.SslProtocols });
             HttpClient.DefaultRequestHeaders.ConnectionClose = false;
             HttpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
             HttpClient.DefaultRequestHeaders.Pragma.Add(NameValueHeaderValue.Parse("no-cache"));

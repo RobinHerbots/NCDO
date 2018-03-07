@@ -84,6 +84,6 @@ namespace NCDO
         /// Specify SslProtocols required
         /// Ex: SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls
         /// </summary>
-        public SslProtocols SslProtocols { get; set; } = SslProtocols.None;
+        public SslProtocols SslProtocols { get; set; } = SslProtocols.Default;
     }
 }
