@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Json;
 using System.Net.Http;
 using System.Text;
+using NCDO.Extensions;
 using NCDO.Interfaces;
 
 namespace NCDO
@@ -20,7 +21,14 @@ namespace NCDO
         public bool? Success { get; internal set; }
 
         public HttpResponseMessage ResponseMessage { get; internal set; }
-        public  Uri RequestUri { get; internal set;}
+        public Uri RequestUri { get; internal set; }
         public HttpMethod Method { get; internal set; }
+
+        public void ThrowOnError()
+        {
+            Response?.ThrowOnErrorResponse();
+            if (Success.HasValue && !Success.Value && Response == null)
+                throw new CDOException($"{ResponseMessage.StatusCode} - {ResponseMessage.RequestMessage.RequestUri}");
+        }
     }
 }

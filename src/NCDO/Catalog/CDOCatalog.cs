@@ -39,20 +39,25 @@ namespace NCDO.Catalog
 
         public virtual async Task ProcessResponse(HttpClient client, HttpResponseMessage response)
         {
-            using (var dataStream = await response.Content.ReadAsStreamAsync())
+            if ((response.Headers.TransferEncodingChunked.HasValue && response.Headers.TransferEncodingChunked.Value) ||
+                response.Content.Headers.ContentLength > 0)
             {
-                if (dataStream != null)
+                using (var dataStream = await response.Content.ReadAsStreamAsync())
                 {
-                    var jsonResponse = JsonObject.Load(dataStream);
-                    if (jsonResponse == null) throw new InvalidDataException("Could not parse catalog data.");
-                    //init catalog from response
-                    Version = jsonResponse.Get("version");
-                    LastModified = jsonResponse.Get("lastModified");
-                    foreach (JsonValue serviceDefinition in jsonResponse.Get("services"))
+                    if (dataStream != null)
                     {
-                        Services.Add(new Service(serviceDefinition));
-                    }
+                        var jsonResponse = JsonObject.Load(dataStream);
+                        if (jsonResponse == null) throw new InvalidDataException("Could not parse catalog data.");
+                        jsonResponse.ThrowOnErrorResponse();
+                        //init catalog from response
+                        Version = jsonResponse.Get("version");
+                        LastModified = jsonResponse.Get("lastModified");
+                        foreach (JsonValue serviceDefinition in jsonResponse.Get("services"))
+                        {
+                            Services.Add(new Service(serviceDefinition));
+                        }
 
+                    }
                 }
             }
         }

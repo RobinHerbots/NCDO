@@ -924,14 +924,27 @@ namespace NCDO.Interfaces
             request.Success = response.IsSuccessStatusCode;
             request.ResponseMessage = response;
             //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
-            if (response.IsSuccessStatusCode && ((response.Headers.TransferEncodingChunked.HasValue && response.Headers.TransferEncodingChunked.Value) || response.Content.Headers.ContentLength > 0))
+            if ((response.Headers.TransferEncodingChunked.HasValue && response.Headers.TransferEncodingChunked.Value) || response.Content.Headers.ContentLength > 0)
+            {
                 using (var dataStream = await response.Content.ReadAsStreamAsync())
                 {
                     if (dataStream != null)
-                        request.Response = (JsonObject)(string.IsNullOrEmpty(request.FnName)
-                            ? JsonValue.Load(dataStream)
-                            : JsonValue.Load(dataStream).Get("response"));
+                    {
+                        var parsedResponse = JsonValue.Load(dataStream);
+                        if (parsedResponse != null)
+                        {
+                            request.Response =
+                                (JsonObject) (!string.IsNullOrEmpty(request.FnName) &&
+                                              parsedResponse.ContainsKey("response")
+                                    ? parsedResponse.Get("response")
+                                    : parsedResponse);
+                        }
+
+                    }
                 }
+            }
+
+            request.ThrowOnError();
         }
 
         public virtual async Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request)
