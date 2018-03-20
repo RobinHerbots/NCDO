@@ -77,7 +77,7 @@ namespace NCDO
 
                 return _token;
             }
-            set => _token = value; 
+            protected set => _token = value; 
         }
 
         /// <summary>
