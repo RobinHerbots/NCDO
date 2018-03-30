@@ -25,7 +25,7 @@ namespace NCDO.Extensions
                     switch (mc?.Method.Name)
                     {
                         case "Equals":
-                            return mc?.Object != null ? $"{ToString(mc?.Object)} = {ToString(mc?.Arguments.FirstOrDefault(), true)}" : $"{ToString(mc?.Arguments[0])} = {ToString(mc?.Arguments[2], true)}";
+                            return mc?.Object != null ? $"{ToString(mc?.Object)} = {ToString(mc?.Arguments.FirstOrDefault(), true)}" : $"{ToString(mc?.Arguments[0])} = {ToString(mc?.Arguments[1], true)}";
                         case "StartsWith":
                             return $"{ToString(mc?.Object)} BEGINS {ToString(mc?.Arguments.FirstOrDefault(), true)}";
                         case "Contains":
