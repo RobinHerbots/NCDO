@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using Newtonsoft.Json.Serialization;
 
 namespace NCDO.Extensions
 {
@@ -50,16 +51,15 @@ namespace NCDO.Extensions
                     {
                         return me.Member.Name.Replace("\"", valueParameter ? "'" : string.Empty);
                     }
-                    switch (me?.Member)
-                    {
-                        case FieldInfo _:
-                            var fieldValue = ((FieldInfo)me.Member).GetValue(ResolveMember(me)).ToString();
-                            return valueParameter ? $"'{fieldValue}'" : fieldValue;
-                        case PropertyInfo _:
-                            var propValue = ((PropertyInfo)me.Member).GetValue(ResolveMember(me)).ToString();
-                            return valueParameter ? $"'{propValue}'" : propValue;
-                    }
-                    throw new NotSupportedException($"ToABLFIlter {expression.NodeType}");
+
+                    var memberValue = ResolveMember(me)?.ToString();
+                    //string memberValue = null;
+                    //if (me?.Member is FieldInfo info)
+                    //    memberValue = (string)info.GetValue(memberObj);
+                    //if (me?.Member is PropertyInfo propertyInfo)
+                    //    memberValue = (string)propertyInfo.GetValue(memberObj);
+
+                    return valueParameter ? $"'{memberValue}'" : memberValue;
                 case ExpressionType.NotEqual:
                     be = expression as BinaryExpression;
                     return $"{ToString(be?.Left)} <> {ToString(be?.Right, true)}";
@@ -80,23 +80,37 @@ namespace NCDO.Extensions
             }
         }
 
-        private static object ResolveMember(MemberExpression exp, bool memberResolve = false)
+        private static object ResolveMember(MemberExpression exp)
         {
+            object expValue = null;
             switch (exp?.Expression?.NodeType)
             {
                 case ExpressionType.MemberAccess:
-                    return ResolveMember(exp.Expression as MemberExpression, true);
+                    expValue = ResolveMember(exp.Expression as MemberExpression);
+                    break;
                 case ExpressionType.Constant:
-                    if (memberResolve)
-                    {
-                        if (exp.Member is FieldInfo info)
-                            return info.GetValue((exp.Expression as ConstantExpression)?.Value);
-                        if (exp.Member is PropertyInfo propertyInfo)
-                            return propertyInfo.GetValue((exp.Expression as ConstantExpression)?.Value);
-                    }
-                    return (exp.Expression as ConstantExpression)?.Value;
+                    expValue = (exp.Expression as ConstantExpression)?.Value;
+                    break;
             }
-            return exp;
+
+            try
+            {
+                switch (exp?.Member)
+                {
+                    case FieldInfo info:
+                        expValue = info.GetValue(expValue);
+                        break;
+                    case PropertyInfo propertyInfo:
+                        expValue = propertyInfo.GetValue(expValue);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+
+            return expValue;
         }
     }
 }
