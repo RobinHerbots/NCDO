@@ -52,4 +52,4 @@ Any contributions (code, documentation) is also welcome.
         ///     is found, it returns null.
         /// </summary>
         /// <returns></returns>
-        Task<D> Get(Expression<Func<R, bool>> filter, bool autoFetch);
+        Task<D> Get(Expression<Func<R, bool>> filter);
