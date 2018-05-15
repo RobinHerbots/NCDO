@@ -198,13 +198,7 @@ namespace NCDO.Interfaces
 
 
 
-        /// <summary>
-        ///     Synchronizes to the Cloud Data Server all changes pending in
-        ///     CDO memory since the last call to the fill( ) or
-        ///     saveChanges( ) methods, or since any prior changes
-        ///     have been otherwise accepted or rejected.
-        /// </summary>
-        Task SaveChanges();
+       
 
         /// <summary>
         ///     Saves CDO memory to a specified local storage area,
@@ -331,6 +325,14 @@ namespace NCDO.Interfaces
         /// Reset CDO Memory
         /// </summary>
         void Reset();
+
+        /// <summary>
+        ///     Synchronizes to the Cloud Data Server all changes pending in
+        ///     CDO memory since the last call to the fill( ) or
+        ///     saveChanges( ) methods, or since any prior changes
+        ///     have been otherwise accepted or rejected.
+        /// </summary>
+        Task SaveChanges(CDO_Table<R> tableRef = null);
         #endregion
 
         #region Properties
@@ -784,15 +786,16 @@ namespace NCDO.Interfaces
             throw new CDOException(string.Format(Properties.Resources.API_InternalError, "Remove"));
         }
 
-        public async Task SaveChanges()
+        public async Task SaveChanges(CDO_Table<R> tableRef = null)
         {
+            if (tableRef == null) tableRef = TableReference;
             BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
 
-            if (TableReference != null)
+            if (tableRef != null)
             {
                 Operation operation = null;
                 //delete
-                if (TableReference._deleted.Any())
+                if (tableRef._deleted.Any())
                 {
                     operation = VerifyOperation(null, OperationType.Delete);
                     var deleteRequest = new CDORequest
@@ -804,7 +807,7 @@ namespace NCDO.Interfaces
                                 $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D { { _mainTable, new CDO_Table<R>(TableReference._deleted) } }
+                        ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._deleted) } }
                     };
                     BeforeDelete?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
                     await DoRequest(deleteRequest, ProcessCRUDResponse);
@@ -812,7 +815,7 @@ namespace NCDO.Interfaces
                 }
 
                 //create
-                if (TableReference._new.Any())
+                if (tableRef._new.Any())
                 {
                     operation = VerifyOperation(null, OperationType.Create);
                     var createRequest = new CDORequest
@@ -824,14 +827,14 @@ namespace NCDO.Interfaces
                                 $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D { { _mainTable, new CDO_Table<R>(TableReference._new) } }
+                        ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._new) } }
                     };
                     BeforeCreate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
                     await DoRequest(createRequest, ProcessCRUDResponse);
                     AfterCreate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
                 }
                 //update
-                if (TableReference._changed.Any())
+                if (tableRef._changed.Any())
                 {
                     operation = VerifyOperation(null, OperationType.Update);
                     var updateRequest = new CDORequest
@@ -843,7 +846,7 @@ namespace NCDO.Interfaces
                                 $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D { { _mainTable, new CDO_Table<R>(TableReference._changed) } }
+                        ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._changed) } }
                     };
                     BeforeUpdate?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
                     await DoRequest(updateRequest, ProcessCRUDResponse);
@@ -851,7 +854,7 @@ namespace NCDO.Interfaces
                 }
 
                 //all done => accept the changes
-                if (AutoApplyChanges) TableReference.AcceptChanges();
+                if (AutoApplyChanges) tableRef.AcceptChanges();
             }
             else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "SaveChanges"));
             AfterSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
@@ -934,7 +937,7 @@ namespace NCDO.Interfaces
                         if (parsedResponse != null)
                         {
                             request.Response =
-                                (JsonObject) (!string.IsNullOrEmpty(request.FnName) &&
+                                (JsonObject)(!string.IsNullOrEmpty(request.FnName) &&
                                               parsedResponse.ContainsKey("response")
                                     ? parsedResponse.Get("response")
                                     : parsedResponse);
