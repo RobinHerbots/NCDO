@@ -75,6 +75,9 @@ namespace NCDO.Extensions
                 case ExpressionType.AndAlso:
                     be = expression as BinaryExpression;
                     return $"{ToString(be?.Left)} AND {ToString(be?.Right)}";
+                case ExpressionType.Not:
+                    var  notExp = expression as UnaryExpression;
+                    return $"NOT {ToString(notExp?.Operand)}";
                 default:
                     throw new NotSupportedException($"ToABLFIlter {expression.NodeType}");
             }
