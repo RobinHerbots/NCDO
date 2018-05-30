@@ -5,7 +5,7 @@ using System.Text;
 namespace NCDO.Catalog
 {
     /// <summary>
-    /// TODO
+    /// IPropertyDefinition
     /// </summary>
     public interface IPropertyDefinition
     {
