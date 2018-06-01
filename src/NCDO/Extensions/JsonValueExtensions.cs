@@ -20,15 +20,24 @@ namespace NCDO.Extensions
 
         public static void ThrowOnErrorResponse(this JsonValue jsonValue)
         {
-            if (jsonValue.ContainsKey("error"))
+            if (jsonValue.ContainsKey("error")) //pas error
             {
                 throw new CDOException(jsonValue.Get("error"), jsonValue.Get("error_description")) { Scope = jsonValue.Get("scope") };
             }
 
-            if (jsonValue.ContainsKey("_errors"))
+            if (jsonValue.ContainsKey("_errors")) //progress error
             {
-                JsonArray errors = (JsonArray) jsonValue.Get("_errors");
-                throw new CDOException(jsonValue.Get("_retval"),errors.FirstOrDefault().Get("_errorMsg") );
+                string code = "";
+                string message = jsonValue.Get("_retVal");
+
+                var errors = (JsonArray)jsonValue.Get("_errors");
+                foreach (var error in errors)
+                {
+                    code = error.Get("_errorNum").ToString();
+                    if (string.IsNullOrEmpty(message)) message = error.Get("_errorMsg");
+                    break;
+                }
+                throw new CDOException(code, message);
             }
         }
     }
