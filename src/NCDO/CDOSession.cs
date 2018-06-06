@@ -46,7 +46,9 @@ namespace NCDO
         public HttpClient HttpClient { get; }
 
         private readonly Dictionary<Uri, ICDOCatalog> _catalogs = new Dictionary<Uri, ICDOCatalog>();
+#pragma warning disable 1998
         public virtual async Task OnOpenRequest(HttpClient client, HttpRequestMessage request)
+#pragma warning restore 1998
         {
             //add authorization if needed
             if (AuthenticationModel != AuthenticationModel.Anonymous)
@@ -83,12 +85,16 @@ namespace NCDO
             }
         }
 
+#pragma warning disable 1998
         public virtual async Task ProcessLoginResponse(HttpResponseMessage response)
+#pragma warning restore 1998
         {
             LoginHttpStatus = response.StatusCode;
         }
 
+#pragma warning disable 1998
         public virtual async Task PrepareLoginRequest(HttpRequestMessage request, StringBuilder urlBuilder)
+#pragma warning restore 1998
         {
             urlBuilder.Append(_loginURI);
 
@@ -96,7 +102,9 @@ namespace NCDO
             request.RequestUri = new Uri(urlBuilder.ToString(), UriKind.RelativeOrAbsolute);
         }
 
+#pragma warning disable 1998
         public async Task Logout()
+#pragma warning restore 1998
         {
             ThrowIfDisposed();
             //throw new NotImplementedException(); 

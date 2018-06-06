@@ -28,7 +28,7 @@ namespace NCDO
         }
     }
 
-    
+
     /// <summary>
     /// Abstract implementation of ICloudDataObject
     /// </summary>
@@ -500,7 +500,7 @@ namespace NCDO
             using (var request = new HttpRequestMessage())
             {
                 //add authentication headers
-                _cDOSession.OnOpenRequest(_cDOSession.HttpClient, request);
+                await _cDOSession.OnOpenRequest(_cDOSession.HttpClient, request);
 
                 //init request from CDORequest
                 request.Method = cDORequest.Method;

@@ -71,12 +71,14 @@ namespace NCDO.CDOMemory
             primaryKey = _defaults.primaryKey;
             AddRange(_defaults);
         }
-        public virtual object Default(Expression<Func<T, object>> propertyExpression)
+        public virtual S Default<S>(Expression<Func<T, S>> propertyExpression)
         {
             var property = propertyExpression.Body as UnaryExpression;
             MemberExpression propExp = (property?.Operand as MemberExpression) ?? propertyExpression.Body as MemberExpression;
             var defaultValueAttribute = propExp?.Member.GetCustomAttribute<DefaultValueAttribute>();
-            return defaultValueAttribute?.Value;
+            
+            var converter = TypeDescriptor.GetConverter(typeof(S));
+            return (S) converter.ConvertFromString(defaultValueAttribute?.Value.ToString());
         }
 
         #region Overrides of CDO_Record

@@ -27,7 +27,7 @@ namespace NCDO.Catalog
             using (var request = new HttpRequestMessage())
             {
                 request.Method = new HttpMethod("GET");
-                _cDOSession.OnOpenRequest(_cDOSession.HttpClient, request);
+                await _cDOSession.OnOpenRequest(_cDOSession.HttpClient, request);
                 request.RequestUri = _catalogUri;
 
                 var response = await _cDOSession.HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead);

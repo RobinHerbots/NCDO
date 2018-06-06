@@ -108,7 +108,7 @@ namespace NCDO.Extensions
                         break;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
 
             }

@@ -71,7 +71,6 @@ namespace NCDO
                             var clientCredential = new ClientCredential(ClientId, ClientSecret);
                             var tokenResult = authContext.AcquireTokenAsync(Audience, clientCredential).Result;
                             return tokenResult.AccessToken;
-                            break;
                     }
                 }
 
