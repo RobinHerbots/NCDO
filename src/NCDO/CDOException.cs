@@ -21,7 +21,7 @@ namespace NCDO
         {
         }
 
-        public CDOException(string code, string message, Exception innerException= null) : base(message, innerException)
+        public CDOException(string code, string message, Exception innerException = null) : base(message, innerException)
         {
             Code = code;
         }
