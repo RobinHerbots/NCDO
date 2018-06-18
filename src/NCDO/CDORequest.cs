@@ -27,7 +27,7 @@ namespace NCDO
         public void ThrowOnError()
         {
             Response?.ThrowOnErrorResponse();
-            if (Success.HasValue && !Success.Value && Response == null)
+            if (Success.HasValue && !Success.Value)
                 throw new CDOException($"{ResponseMessage.StatusCode} - {ResponseMessage.RequestMessage.RequestUri}");
         }
     }
