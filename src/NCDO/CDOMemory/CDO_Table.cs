@@ -76,7 +76,7 @@ namespace NCDO.CDOMemory
                     item.PropertyChanged -= Item_PropertyChanged;
                     item.PropertyChanged += Item_PropertyChanged;
                     if (notify)
-                        OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] {item});
+                        OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] { item });
                 }
                 else
                 {
@@ -88,15 +88,14 @@ namespace NCDO.CDOMemory
                         case MergeMode.Append:
                             throw new CDOException($"Duplicate record with ID {item.GetId()}");
                         case MergeMode.Merge:
-                            Merge(this[index], item);
-                            if (notify)
-                                OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] {this[index]}, index);
+                            if (Merge(this[index], item) && notify)
+                                OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { this[index] });
                             break;
                         case MergeMode.Replace:
                             RemoveAt(index);
                             _list.Add(item);
                             if (notify)
-                                OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] {item}, index);
+                                OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] { item }, index);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(mergeMode), mergeMode, null);
@@ -146,11 +145,11 @@ namespace NCDO.CDOMemory
             {
                 var ndx = IndexOf(item);
                 _list.RemoveAt(ndx);
-                OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] {item});
+                OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { item });
             }
             else
             {
-                OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] {item});
+                OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] { item });
             }
 
             _list.Insert(index, item);
@@ -197,7 +196,7 @@ namespace NCDO.CDOMemory
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            stream.WriteByte((byte) '[');
+            stream.WriteByte((byte)'[');
 
             for (var i = 0; i < _list.Count; i++)
             {
@@ -208,20 +207,20 @@ namespace NCDO.CDOMemory
                 }
                 else
                 {
-                    stream.WriteByte((byte) 'n');
-                    stream.WriteByte((byte) 'u');
-                    stream.WriteByte((byte) 'l');
-                    stream.WriteByte((byte) 'l');
+                    stream.WriteByte((byte)'n');
+                    stream.WriteByte((byte)'u');
+                    stream.WriteByte((byte)'l');
+                    stream.WriteByte((byte)'l');
                 }
 
                 if (i < Count - 1)
                 {
-                    stream.WriteByte((byte) ',');
-                    stream.WriteByte((byte) ' ');
+                    stream.WriteByte((byte)',');
+                    stream.WriteByte((byte)' ');
                 }
             }
 
-            stream.WriteByte((byte) ']');
+            stream.WriteByte((byte)']');
         }
 
         #region Implementation of INotifyCollectionChanged
@@ -245,7 +244,7 @@ namespace NCDO.CDOMemory
                             {
                                 if (_new.All(r => r.GetId() != item.GetId()))
                                 {
-                                    AddNew(_changed, new[] {item}, DataRowState.Modified);
+                                    AddNew(_changed, new[] { item }, DataRowState.Modified);
                                 }
                             }
                         }
@@ -253,13 +252,13 @@ namespace NCDO.CDOMemory
                     break;
                 case NotifyCollectionChangedAction.Remove:
                     if (index != -1)
-                        AddNew(_deleted, new[] {_list[index]}, DataRowState.Deleted);
+                        AddNew(_deleted, new[] { _list[index] }, DataRowState.Deleted);
                     AddNew(_deleted, items, DataRowState.Deleted);
 
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     AddNew(_changed, items, DataRowState.Modified);
-                    AddNew(_deleted, new[] {_list[index]}, DataRowState.Deleted);
+                    AddNew(_deleted, new[] { _list[index] }, DataRowState.Deleted);
 
                     break;
                 case NotifyCollectionChangedAction.Reset:
@@ -276,7 +275,7 @@ namespace NCDO.CDOMemory
 
         private void OnCollectionChanged(object sender, PropertyChangedEventArgs e)
         {
-            OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] {(T) sender});
+            OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { (T)sender });
         }
 
         #endregion
@@ -290,8 +289,9 @@ namespace NCDO.CDOMemory
         /// <param name="target"></param>
         /// <param name="source"></param>
         /// <returns></returns>
-        private void Merge<S>(S target, S source) where S : class, ICloudDataRecord
+        private bool Merge<S>(S target, S source) where S : class, ICloudDataRecord
         {
+            var changed = false;
             if (source != null)
             {
                 foreach (var propertyInfo in target.GetType()
@@ -301,9 +301,12 @@ namespace NCDO.CDOMemory
                     {
                         var sourceValue = propertyInfo.GetValue(source);
                         propertyInfo.SetValue(target, sourceValue);
+                        changed = true;
                     }
                 }
             }
+
+            return changed;
         }
 
         private void AddNew(IList<T> list, IEnumerable<T> items, Definitions.DataRowState rowState)
