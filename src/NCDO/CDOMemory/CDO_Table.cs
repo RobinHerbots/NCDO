@@ -21,34 +21,25 @@ namespace NCDO.CDOMemory
         internal List<T> _changed = new List<T>();
         internal List<T> _deleted = new List<T>();
 
-        public CDO_Table(params T[] items)
-        {
-            _list = new List<T>();
-            AddRange(items, MergeMode.Append, false);
-        }
+        public CDO_Table(params T[] items) : this((IEnumerable<T>)items)
+        { }
 
         public CDO_Table(IEnumerable<T> items)
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
 
-            _list = new List<T>();
-            AddRange(items, MergeMode.Append, false);
+            _list = items.ToList();
+            _list.ForEach(item => item.PropertyChanged += Item_PropertyChanged);
         }
 
-        public CDO_Table(IEnumerable<JsonObject> items)
+        public CDO_Table(IEnumerable<JsonObject> items) : this(items.Select(i =>
         {
-            if (items == null)
-                throw new ArgumentNullException(nameof(items));
-
-            _list = new List<T>();
-            AddRange(items.Select(i =>
-            {
-                var record = new T();
-                record.AddRange(i);
-                return record;
-            }), MergeMode.Append, false);
-        }
+            var record = new T();
+            foreach (var keyValuePair in i) { record.Add(keyValuePair.Key, keyValuePair.Value, false); }
+            return record;
+        }))
+        { }
 
         public override JsonType JsonType => JsonType.Array;
 
@@ -185,6 +176,7 @@ namespace NCDO.CDOMemory
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
+
             foreach (var item in items)
             {
                 Add(item, mergeMode, notify);

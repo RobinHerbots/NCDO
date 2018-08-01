@@ -13,13 +13,13 @@ namespace NCDO.Extensions
     {
         public static string ToABLFIlter<R>(this Expression<Func<R, bool>> filterExpression)
         {
-            return ToString(filterExpression.Body);
+            return ToString(filterExpression?.Body);
         }
 
         private static string ToString(Expression expression, bool valueParameter = false)
         {
             BinaryExpression be;
-            switch (expression.NodeType)
+            switch (expression?.NodeType)
             {
                 case ExpressionType.Call:
                     var mc = expression as MethodCallExpression;
@@ -79,7 +79,7 @@ namespace NCDO.Extensions
                     var  notExp = expression as UnaryExpression;
                     return $"NOT {ToString(notExp?.Operand)}";
                 default:
-                    throw new NotSupportedException($"ToABLFIlter {expression.NodeType}");
+                    throw new NotSupportedException($"ToABLFIlter {expression?.NodeType}");
             }
         }
 

@@ -32,7 +32,7 @@ namespace NCDO.CDOMemory
 
         public CDO_Record()
         {
-            if(_defaults !=null) InitializeRecord(); //only initialize after _defaults instantiation
+            if (_defaults != null) InitializeRecord(); //only initialize after _defaults instantiation
         }
 
         #endregion
@@ -69,20 +69,19 @@ namespace NCDO.CDOMemory
             }
 
             primaryKey = _defaults.primaryKey;
-            AddRange(_defaults);
+            foreach (var keyValuePair in _defaults) { Add(keyValuePair.Key, keyValuePair.Value, false); }
         }
         public virtual S Default<S>(Expression<Func<T, S>> propertyExpression)
         {
             var property = propertyExpression.Body as UnaryExpression;
             MemberExpression propExp = (property?.Operand as MemberExpression) ?? propertyExpression.Body as MemberExpression;
             var defaultValueAttribute = propExp?.Member.GetCustomAttribute<DefaultValueAttribute>();
-            
+
             var converter = TypeDescriptor.GetConverter(typeof(S));
-            return (S) converter.ConvertFromString(defaultValueAttribute?.Value.ToString());
+            return (S)converter.ConvertFromString(defaultValueAttribute?.Value.ToString());
         }
 
         #region Overrides of CDO_Record
-        
         /// <inheritdoc />
         public override string GetId()
         {
@@ -187,16 +186,17 @@ namespace NCDO.CDOMemory
             if (!_changeDict.ContainsKey(propertyName)) _changeDict.Add(propertyName, this[propertyName]);
         }
 
-        public new void Add(string key, JsonValue value)
+        public void Add(string key, JsonValue value, bool notify = true)
         {
             if (key == null)
                 throw new ArgumentNullException(nameof(key));
-            if (ContainsKey(key))
+
+            if (notify && ContainsKey(key))
             {
                 OnPropertyChanging(key); base.Remove(key);
             }
-            base.Add(key, value);
-            if (IsPropertyChanged(key)) OnPropertyChanged(key);
+            base[key] = value;
+            if (notify && IsPropertyChanged(key)) OnPropertyChanged(key);
         }
 
         public new void AddRange(IEnumerable<KeyValuePair<string, JsonValue>> items)

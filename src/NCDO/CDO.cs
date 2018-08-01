@@ -166,7 +166,7 @@ namespace NCDO
 
         public async Task<ICDORequest> Fill(Expression<Func<R, bool>> filter)
         {
-            return await Fill(new QueryRequest() {ABLFilter = filter.ToABLFIlter()});
+            return await Fill(new QueryRequest() { ABLFilter = filter.ToABLFIlter() });
         }
 
         /// <inheritdoc />
@@ -208,11 +208,11 @@ namespace NCDO
                     BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
                 var pkFieldInfo = typeof(R).GetField("primaryKey",
                     BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-                var primaryKey = (string) pkFieldInfo.GetValue(defaultsFieldInfo.GetValue(null));
+                var primaryKey = (string)pkFieldInfo.GetValue(defaultsFieldInfo.GetValue(null));
                 if (string.IsNullOrEmpty(primaryKey))
                 {
                     new R();
-                    primaryKey = (string) pkFieldInfo.GetValue(defaultsFieldInfo.GetValue(null));
+                    primaryKey = (string)pkFieldInfo.GetValue(defaultsFieldInfo.GetValue(null));
                 }
 
                 await Fill($"{primaryKey ?? "ID"} = '{id}'");
@@ -280,7 +280,7 @@ namespace NCDO
             {
                 CDO = this,
                 FnName = operationDefinition.Name,
-                ObjParam = _serviceDefinition.UseRequest ? new JsonObject {{"request", inputObject}} : inputObject,
+                ObjParam = _serviceDefinition.UseRequest ? new JsonObject { { "request", inputObject } } : inputObject,
                 RequestUri =
                     new Uri(
                         $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}{operationDefinition.Path}",
@@ -289,10 +289,10 @@ namespace NCDO
             };
 
             BeforeInvoke?.Invoke(this,
-                new CDOEventArgs<T, D, R> {CDO = this, Request = cDORequest, Session = _cDOSession});
+                new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             await DoRequest(cDORequest, ProcessInvokeResponse);
             AfterInvoke?.Invoke(this,
-                new CDOEventArgs<T, D, R> {CDO = this, Request = cDORequest, Session = _cDOSession});
+                new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
 
             return cDORequest;
         }
@@ -325,21 +325,21 @@ namespace NCDO
             };
 
             BeforeFill?.Invoke(this,
-                new CDOEventArgs<T, D, R> {CDO = this, Request = cDORequest, Session = _cDOSession});
+                new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             BeforeRead?.Invoke(this,
-                new CDOEventArgs<T, D, R> {CDO = this, Request = cDORequest, Session = _cDOSession});
+                new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             await DoRequest(cDORequest, ProcessCRUDResponse);
             AfterFill?.Invoke(this,
-                new CDOEventArgs<T, D, R> {CDO = this, Request = cDORequest, Session = _cDOSession});
+                new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             AfterRead?.Invoke(this,
-                new CDOEventArgs<T, D, R> {CDO = this, Request = cDORequest, Session = _cDOSession});
+                new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
 
             return cDORequest;
         }
 
         public async Task<ICDORequest> Read(Expression<Func<R, bool>> filter)
         {
-            return await Read(new QueryRequest() {ABLFilter = filter.ToABLFIlter()});
+            return await Read(new QueryRequest() { ABLFilter = filter.ToABLFIlter() });
         }
 
         public void ReadLocal()
@@ -374,7 +374,7 @@ namespace NCDO
         public async Task SaveChanges(CDO_Table<R> tableRef = null)
         {
             if (tableRef == null) tableRef = TableReference;
-            BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> {CDO = this, Request = null});
+            BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
 
             if (tableRef != null)
             {
@@ -392,13 +392,13 @@ namespace NCDO
                                 $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D {{_mainTable, new CDO_Table<R>(tableRef._deleted)}}
+                        ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._deleted) } }
                     };
                     BeforeDelete?.Invoke(this,
-                        new CDOEventArgs<T, D, R> {CDO = this, Request = deleteRequest, Session = _cDOSession});
+                        new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
                     await DoRequest(deleteRequest, ProcessCRUDResponse);
                     AfterDelete?.Invoke(this,
-                        new CDOEventArgs<T, D, R> {CDO = this, Request = deleteRequest, Session = _cDOSession});
+                        new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
                 }
 
                 //create
@@ -414,13 +414,13 @@ namespace NCDO
                                 $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D {{_mainTable, new CDO_Table<R>(tableRef._new)}}
+                        ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._new) } }
                     };
                     BeforeCreate?.Invoke(this,
-                        new CDOEventArgs<T, D, R> {CDO = this, Request = createRequest, Session = _cDOSession});
+                        new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
                     await DoRequest(createRequest, ProcessCRUDResponse);
                     AfterCreate?.Invoke(this,
-                        new CDOEventArgs<T, D, R> {CDO = this, Request = createRequest, Session = _cDOSession});
+                        new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
                 }
 
                 //update
@@ -436,13 +436,13 @@ namespace NCDO
                                 $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D {{_mainTable, new CDO_Table<R>(tableRef._changed)}}
+                        ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._changed) } }
                     };
                     BeforeUpdate?.Invoke(this,
-                        new CDOEventArgs<T, D, R> {CDO = this, Request = updateRequest, Session = _cDOSession});
+                        new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
                     await DoRequest(updateRequest, ProcessCRUDResponse);
                     AfterUpdate?.Invoke(this,
-                        new CDOEventArgs<T, D, R> {CDO = this, Request = updateRequest, Session = _cDOSession});
+                        new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
                 }
 
                 //all done => accept the changes
@@ -450,7 +450,7 @@ namespace NCDO
             }
             else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "SaveChanges"));
 
-            AfterSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> {CDO = this, Request = null});
+            AfterSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
         }
 
         public void SaveLocal()
@@ -534,7 +534,7 @@ namespace NCDO
                         if (parsedResponse != null)
                         {
                             request.Response =
-                                (JsonObject) (!string.IsNullOrEmpty(request.FnName) &&
+                                (JsonObject)(!string.IsNullOrEmpty(request.FnName) &&
                                               parsedResponse.ContainsKey("response")
                                     ? parsedResponse.Get("response")
                                     : parsedResponse);
@@ -561,12 +561,8 @@ namespace NCDO
                         }
                     }
 
-                    if (_cdoMemory == null)
-                    {
-                        //init cdoMemory
-                        _cdoMemory = new D();
-                    }
-
+                    //init cdoMemory
+                    _cdoMemory = new D();
                     _cdoMemory.Init(request.Response);
                 }
         }

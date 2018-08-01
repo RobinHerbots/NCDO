@@ -27,8 +27,8 @@ namespace NCDO.CDOMemory
 
         internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items)
         {
-            if(items == null) throw new ArgumentNullException(nameof(items));
-            
+            if (items == null) throw new ArgumentNullException(nameof(items));
+
             var ds = items.FirstOrDefault();
             if (!string.IsNullOrEmpty(ds.Key))
             {
@@ -58,10 +58,7 @@ namespace NCDO.CDOMemory
             else
             {
                 var table = (CDO_Table<R>)this[key];
-                foreach (R record in value)
-                {
-                    table.Add(record, MergeMode.Merge, false);
-                }
+                table.AddRange(value, MergeMode.Merge, false);
             }
         }
 
