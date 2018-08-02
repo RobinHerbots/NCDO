@@ -47,15 +47,8 @@ namespace NCDO.Extensions
                     {
                         return me.Member.Name.Replace("\"", valueParameter ? "'" : string.Empty);
                     }
-
                     var memberValue = ResolveMember(me)?.ToString();
-                    //string memberValue = null;
-                    //if (me?.Member is FieldInfo info)
-                    //    memberValue = (string)info.GetValue(memberObj);
-                    //if (me?.Member is PropertyInfo propertyInfo)
-                    //    memberValue = (string)propertyInfo.GetValue(memberObj);
-
-                    return valueParameter ? $"'{memberValue}'" : memberValue;
+                    return me.Type == typeof(System.Object) || valueParameter ? $"'{memberValue}'" : memberValue;
                 case ExpressionType.NotEqual:
                     be = expression as BinaryExpression;
                     return $"{ToString(be?.Left)} <> {ToString(be?.Right, true)}";
@@ -72,8 +65,11 @@ namespace NCDO.Extensions
                     be = expression as BinaryExpression;
                     return $"{ToString(be?.Left)} AND {ToString(be?.Right)}";
                 case ExpressionType.Not:
-                    var  notExp = expression as UnaryExpression;
+                    var notExp = expression as UnaryExpression;
                     return $"NOT {ToString(notExp?.Operand)}";
+                case ExpressionType.Convert:
+                    var convertExp = expression as UnaryExpression;
+                    return ToString(convertExp?.Operand, true);
                 default:
                     throw new NotSupportedException($"ToABLFIlter {expression?.NodeType}");
             }
