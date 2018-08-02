@@ -25,18 +25,17 @@ namespace NCDO.CDOMemory
         }
         #endregion
 
-        internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items)
+        internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items = null)
         {
-            if (items == null) throw new ArgumentNullException(nameof(items));
-
-            var ds = items.FirstOrDefault();
-            if (!string.IsNullOrEmpty(ds.Key))
+            Clear();
+            var ds = items?.FirstOrDefault();
+            if (!string.IsNullOrEmpty(ds?.Key))
             {
-                Name = ds.Key;
-                Before = ds.Value.Get("prods:before") as JsonObject;
-                HasChanges = ds.Value.Get("prods:hasChanges");
-                ImportTables(ds.Value);
+                Name = ds?.Key;
+                Before = ds?.Value.Get("prods:before") as JsonObject;
+                HasChanges = ds?.Value.Get("prods:hasChanges");
             }
+            ImportTables(ds?.Value);
         }
 
         protected internal virtual void ImportTables(JsonValue value)
@@ -48,6 +47,7 @@ namespace NCDO.CDOMemory
                 {
                     if (value.Get(key) is IEnumerable<JsonValue> tTable)
                         Add<CDO_Record>(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
+                    else Add<CDO_Record>(key, new CDO_Table<CDO_Record>());
                 }
             }
         }

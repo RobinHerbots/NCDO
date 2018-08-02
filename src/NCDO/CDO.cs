@@ -41,7 +41,7 @@ namespace NCDO
         where R : CDO_Record, new()
     {
         private readonly ICDOSession _cDOSession;
-        protected D _cdoMemory;
+        protected D _cdoMemory = new D();
         private string _mainTable;
         private string _primaryKey;
         private Resource _resourceDefinition;
@@ -87,11 +87,7 @@ namespace NCDO
         /// <inheritdoc />
         public void Reset()
         {
-            if (_cdoMemory != null)
-            {
-                _cdoMemory.Clear();
-                _cdoMemory = null;
-            }
+            _cdoMemory?.Clear();
         }
 
         public CDO_Table<R> TableReference => _cdoMemory?.Get(_mainTable) as CDO_Table<R>;
@@ -550,19 +546,16 @@ namespace NCDO
         {
             await ProcessInvokeResponse(response, request);
             if (request.Success.HasValue && request.Success.Value)
-                if (request.Method == HttpMethod.Get || request.Method == HttpMethod.Post ||
-                    request.Method == HttpMethod.Put)
+                if (request.Method == HttpMethod.Post)
                 {
-                    if (request.Method == HttpMethod.Post)
+                    foreach (R r in TableReference.New)
                     {
-                        foreach (R r in TableReference.New)
-                        {
-                            TableReference.Remove(r);
-                        }
+                        TableReference.Remove(r);
                     }
-
+                }
+                else if (request.Method == HttpMethod.Get)
+                {
                     //init cdoMemory
-                    _cdoMemory = new D();
                     _cdoMemory.Init(request.Response);
                 }
         }
@@ -579,6 +572,7 @@ namespace NCDO
             {
                 Fill().Wait();
             }
+            else _cdoMemory.Init();
         }
 
         /// <summary>
