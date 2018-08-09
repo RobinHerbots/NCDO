@@ -386,5 +386,41 @@ namespace NCDO.CDOMemory
         public IReadOnlyList<T> Deleted => _deleted;
 
         #endregion
+
+        #region Extensions
+        /// <summary>
+        /// When submitting a dataset to the PAS the ID should be unique to be valid for progress.  Negating to mark new records.
+        /// </summary>
+        /// <returns></returns>
+        public CDO_Table<T> NegateNewIds()
+        {
+            var count = -1;
+            foreach (T record in New)
+            {
+                //Temp-table defined with "like" takes the indices from the table and thus need to be unique
+                //add a negative generated id
+                record["ID"] = count--;
+            }
+
+            return this;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="relTable"></param>
+        /// <param name="relId"></param>
+        /// <returns></returns>
+        public CDO_Table<T> RelateNewTo(string relTable, string relId)
+        {
+            foreach (T record in New)
+            {
+                record["RelTable"] = relTable;
+                record["RelID"] = relId;
+            }
+
+            return this;
+        }
+        #endregion
     }
 }

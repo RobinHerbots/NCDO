@@ -370,6 +370,7 @@ namespace NCDO
         public async Task SaveChanges(CDO_Table<R> tableRef = null)
         {
             if (tableRef == null) tableRef = TableReference;
+            tableRef.NegateNewIds();
             BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
 
             if (tableRef != null)
