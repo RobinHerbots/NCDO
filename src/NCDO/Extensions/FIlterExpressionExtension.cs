@@ -60,13 +60,13 @@ namespace NCDO.Extensions
                     return $"{ToString(be?.Left)} <= {ToString(be?.Right, true)}";
                 case ExpressionType.OrElse:
                     be = expression as BinaryExpression;
-                    return $"{ToString(be?.Left)} OR {ToString(be?.Right)}";
+                    return $"({ToString(be?.Left)}) OR ({ToString(be?.Right)})";
                 case ExpressionType.AndAlso:
                     be = expression as BinaryExpression;
-                    return $"{ToString(be?.Left)} AND {ToString(be?.Right)}";
+                    return $"({ToString(be?.Left)}) AND ({ToString(be?.Right)})";
                 case ExpressionType.Not:
                     var notExp = expression as UnaryExpression;
-                    return $"NOT {ToString(notExp?.Operand)}";
+                    return $"NOT ({ToString(notExp?.Operand)})";
                 case ExpressionType.Convert:
                     var convertExp = expression as UnaryExpression;
                     return ToString(convertExp?.Operand, true);
