@@ -46,6 +46,8 @@ namespace NCDO
         private string _primaryKey;
         private Resource _resourceDefinition;
         private Service _serviceDefinition;
+        private static SemaphoreSlim _requestMutex = new SemaphoreSlim(1, 1);
+        private static SemaphoreSlim _saveChangesMutex = new SemaphoreSlim(1, 1);
 
         /// <summary>
         ///     CDO Constructor
@@ -369,85 +371,93 @@ namespace NCDO
 
         public async Task SaveChanges(CDO_Table<R> tableRef = null)
         {
-            if (tableRef == null) tableRef = TableReference;
-            tableRef.NegateNewIds();
-            BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
-
-            if (tableRef != null)
+            await _saveChangesMutex.WaitAsync();
+            try
             {
-                Operation operation = null;
-                //delete
-                if (tableRef._deleted.Any())
-                {
-                    operation = VerifyOperation(null, OperationType.Delete);
-                    var deleteRequest = new CDORequest
-                    {
-                        CDO = this,
-                        FnName = operation.Name,
-                        RequestUri =
-                            new Uri(
-                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
-                                UriKind.Absolute),
-                        Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._deleted) } }
-                    };
-                    BeforeDelete?.Invoke(this,
-                        new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
-                    await DoRequest(deleteRequest, ProcessCRUDResponse);
-                    AfterDelete?.Invoke(this,
-                        new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
-                }
+                if (tableRef == null) tableRef = TableReference;
+                tableRef.NegateNewIds();
+                BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
 
-                //create
-                if (tableRef._new.Any())
+                if (tableRef != null)
                 {
-                    operation = VerifyOperation(null, OperationType.Create);
-                    var createRequest = new CDORequest
+                    Operation operation = null;
+                    //delete
+                    if (tableRef._deleted.Any())
                     {
-                        CDO = this,
-                        FnName = operation.Name,
-                        RequestUri =
-                            new Uri(
-                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
-                                UriKind.Absolute),
-                        Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._new) } }
-                    };
-                    BeforeCreate?.Invoke(this,
-                        new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
-                    await DoRequest(createRequest, ProcessCRUDResponse);
-                    AfterCreate?.Invoke(this,
-                        new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
-                }
+                        operation = VerifyOperation(null, OperationType.Delete);
+                        var deleteRequest = new CDORequest
+                        {
+                            CDO = this,
+                            FnName = operation.Name,
+                            RequestUri =
+                                new Uri(
+                                    $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
+                                    UriKind.Absolute),
+                            Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
+                            ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._deleted) } }
+                        };
+                        BeforeDelete?.Invoke(this,
+                            new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
+                        await DoRequest(deleteRequest, ProcessCRUDResponse);
+                        AfterDelete?.Invoke(this,
+                            new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
+                    }
 
-                //update
-                if (tableRef._changed.Any())
-                {
-                    operation = VerifyOperation(null, OperationType.Update);
-                    var updateRequest = new CDORequest
+                    //create
+                    if (tableRef._new.Any())
                     {
-                        CDO = this,
-                        FnName = operation.Name,
-                        RequestUri =
-                            new Uri(
-                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
-                                UriKind.Absolute),
-                        Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._changed) } }
-                    };
-                    BeforeUpdate?.Invoke(this,
-                        new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
-                    await DoRequest(updateRequest, ProcessCRUDResponse);
-                    AfterUpdate?.Invoke(this,
-                        new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
-                }
+                        operation = VerifyOperation(null, OperationType.Create);
+                        var createRequest = new CDORequest
+                        {
+                            CDO = this,
+                            FnName = operation.Name,
+                            RequestUri =
+                                new Uri(
+                                    $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
+                                    UriKind.Absolute),
+                            Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
+                            ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._new) } }
+                        };
+                        BeforeCreate?.Invoke(this,
+                            new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
+                        await DoRequest(createRequest, ProcessCRUDResponse);
+                        AfterCreate?.Invoke(this,
+                            new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
+                    }
 
-                //all done => accept the changes
-                if (AutoApplyChanges) tableRef.AcceptChanges();
+                    //update
+                    if (tableRef._changed.Any())
+                    {
+                        operation = VerifyOperation(null, OperationType.Update);
+                        var updateRequest = new CDORequest
+                        {
+                            CDO = this,
+                            FnName = operation.Name,
+                            RequestUri =
+                                new Uri(
+                                    $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
+                                    UriKind.Absolute),
+                            Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
+                            ObjParam = new D { { _mainTable, new CDO_Table<R>(tableRef._changed) } }
+                        };
+                        BeforeUpdate?.Invoke(this,
+                            new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
+                        await DoRequest(updateRequest, ProcessCRUDResponse);
+                        AfterUpdate?.Invoke(this,
+                            new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
+                    }
+
+                    //all done => accept the changes
+                    if (AutoApplyChanges) tableRef.AcceptChanges();
+                }
+                else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "SaveChanges"));
+
+                AfterSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
             }
-            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "SaveChanges"));
-
-            AfterSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
+            finally
+            {
+                _saveChangesMutex.Release();
+            }
         }
 
         public void SaveLocal()
@@ -491,28 +501,35 @@ namespace NCDO
 
         #region Request logic
 
-        public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest,
-            Func<HttpResponseMessage, CDORequest, Task> processResponse)
+        public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpResponseMessage, CDORequest, Task> processResponse)
         {
-            using (var request = new HttpRequestMessage())
+            await _requestMutex.WaitAsync();
+            try
             {
-                //add authentication headers
-                await _cDOSession.OnOpenRequest(_cDOSession.HttpClient, request);
-
-                //init request from CDORequest
-                request.Method = cDORequest.Method;
-                request.RequestUri = cDORequest.RequestUri;
-                if (!cDORequest.Method.Equals(HttpMethod.Get))
-                    request.Content =
-                        new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
-                using (var response = await _cDOSession.HttpClient.SendAsync(request,
-                    HttpCompletionOption.ResponseHeadersRead, default(CancellationToken)))
+                using (var request = new HttpRequestMessage())
                 {
-                    await processResponse?.Invoke(response, cDORequest);
-                }
-            }
+                    //add authentication headers
+                    await _cDOSession.OnOpenRequest(_cDOSession.HttpClient, request);
 
-            return cDORequest;
+                    //init request from CDORequest
+                    request.Method = cDORequest.Method;
+                    request.RequestUri = cDORequest.RequestUri;
+                    if (!cDORequest.Method.Equals(HttpMethod.Get))
+                        request.Content =
+                            new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
+                    using (var response = await _cDOSession.HttpClient.SendAsync(request,
+                        HttpCompletionOption.ResponseHeadersRead, default(CancellationToken)))
+                    {
+                        await processResponse?.Invoke(response, cDORequest);
+                    }
+                }
+
+                return cDORequest;
+            }
+            finally
+            {
+                _requestMutex.Release();
+            }
         }
 
         public virtual async Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request)
@@ -549,10 +566,20 @@ namespace NCDO
             if (request.Success.HasValue && request.Success.Value)
                 if (request.Method == HttpMethod.Post)
                 {
-                    foreach (R r in TableReference.New)
-                    {
-                        TableReference.Remove(r);
-                    }
+                    if (TableReference.New != null)
+                        for (var ndx = 0; ndx < TableReference.New.Count; ndx++)
+                        {
+                            var r = TableReference.New[ndx];
+                            try //try to recover the new ID
+                            {
+                                //var primaryKey = r.primaryKey ?? "ID";
+                                //r.Set(primaryKey, request.Response.Get(typeof(D).Name).Get("tt" + Name)[ndx]?.Get(primaryKey));
+
+                                TableReference.Merge(r, request.Response.Get(typeof(D).Name).Get("tt" + Name)[ndx] as JsonObject);
+
+                            }
+                            catch { }
+                        }
                 }
                 else if (request.Method == HttpMethod.Get)
                 {

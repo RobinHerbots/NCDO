@@ -27,7 +27,6 @@ namespace NCDO.CDOMemory
 
         internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items = null)
         {
-            Clear();
             var ds = items?.FirstOrDefault();
             if (!string.IsNullOrEmpty(ds?.Key))
             {

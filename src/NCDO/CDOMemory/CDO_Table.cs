@@ -151,7 +151,7 @@ namespace NCDO.CDOMemory
         public new T this[int index]
         {
             get => _list[index];
-            set { Insert(index, value); }
+            set => Insert(index, value);
         }
 
         public bool Remove(T item)
@@ -281,18 +281,16 @@ namespace NCDO.CDOMemory
         /// <param name="target"></param>
         /// <param name="source"></param>
         /// <returns></returns>
-        private bool Merge<S>(S target, S source) where S : class, ICloudDataRecord
+        internal bool Merge<S>(S target, JsonObject source) where S : CDO_Record, ICloudDataRecord
         {
             var changed = false;
             if (source != null)
             {
-                foreach (var propertyInfo in target.GetType()
-                    .GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly))
+                foreach (var key in target.Keys.ToList())
                 {
-                    if (propertyInfo.CanRead && propertyInfo.CanWrite && !target.IsPropertyChanged(propertyInfo.Name))
+                    if (!target.IsPropertyChanged(key))
                     {
-                        var sourceValue = propertyInfo.GetValue(source);
-                        propertyInfo.SetValue(target, sourceValue);
+                        target.Set(key, source.Get(key));
                         changed = true;
                     }
                 }
@@ -395,7 +393,7 @@ namespace NCDO.CDOMemory
         public CDO_Table<T> NegateNewIds()
         {
             var count = -1;
-            if (New.Count > 1)
+            if (New != null && New.Count > 1)
             {
                 foreach (T record in New)
                 {
