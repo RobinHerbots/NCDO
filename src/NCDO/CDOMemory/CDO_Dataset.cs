@@ -57,7 +57,7 @@ namespace NCDO.CDOMemory
             else
             {
                 var table = (CDO_Table<R>)this[key];
-                table.AddRange(value, MergeMode.Merge, false);
+                table.AddRange(value, MergeMode.Replace, false);
             }
         }
 

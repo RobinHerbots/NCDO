@@ -44,5 +44,10 @@ namespace NCDO.Interfaces
         Uri RequestUri { get; }
         HttpMethod Method { get; }
         #endregion
+
+        /// <summary>
+        /// Indicate if request affects cdo memory
+        /// </summary>
+        bool CdoMemory { get; set; }
     }
 }

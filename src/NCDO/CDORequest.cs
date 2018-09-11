@@ -30,5 +30,7 @@ namespace NCDO
             if (Success.HasValue && !Success.Value)
                 throw new CDOException(ResponseMessage.StatusCode.ToString(), ResponseMessage.RequestMessage.RequestUri.ToString());
         }
+
+        public bool CdoMemory { get; set; } = true;
     }
 }

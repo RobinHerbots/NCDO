@@ -290,7 +290,7 @@ namespace NCDO.Interfaces
         Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch);
 
         /// <summary>
-        ///     Searches for a record in a table referenced in CDO memory
+        ///     Searches for a record in a table
         ///     and returns a reference to a dataset with all related data from the record if found. If no record
         ///     is found, it returns null.
         /// </summary>

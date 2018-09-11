@@ -186,7 +186,10 @@ namespace NCDO
         /// <inheritdoc />
         public async Task<D> Get(Expression<Func<R, bool>> filter)
         {
+            BeforeRead += ACloudDataObject_BeforeRead;
             var read = await Read(filter);
+            BeforeRead -= ACloudDataObject_BeforeRead;
+
             if (read.Success.HasValue && read.Success.Value)
             {
                 var ds = new D();
@@ -195,6 +198,11 @@ namespace NCDO
             }
 
             return null;
+        }
+
+        private void ACloudDataObject_BeforeRead(object sender, CDOEventArgs<T, D, R> e)
+        {
+            e.Request.CdoMemory = false;
         }
 
         public async Task<R> FindById(string id, bool autoFetch = false)
@@ -581,7 +589,7 @@ namespace NCDO
                             catch { }
                         }
                 }
-                else if (request.Method == HttpMethod.Get)
+                else if (request.Method == HttpMethod.Get && request.CdoMemory)
                 {
                     //init cdoMemory
                     _cdoMemory.Init(request.Response);
