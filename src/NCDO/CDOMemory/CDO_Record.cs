@@ -45,12 +45,6 @@ namespace NCDO.CDOMemory
                     var props = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
                     foreach (var propertyInfo in props)
                     {
-                        if (string.IsNullOrEmpty(primaryKey) &&
-                            propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
-                        {
-                            _defaults.primaryKey = propertyInfo.Name;
-                        }
-
                         var defaultValueAttribute = propertyInfo.GetCustomAttribute<DefaultValueAttribute>();
                         if (defaultValueAttribute != null && propertyInfo.CanWrite)
                         {
@@ -62,11 +56,17 @@ namespace NCDO.CDOMemory
                                 ? Convert.ChangeType(defaultValueAttribute.Value, targetType)
                                 : defaultValueAttribute.Value);
                         }
+
+                        if (string.IsNullOrEmpty(primaryKey) && propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
+                        {
+                            _defaults.primaryKey = propertyInfo.Name;
+                            primaryKey = propertyInfo.Name;
+                            _pkValue = _defaults.Get(primaryKey);
+                        }
                     }
                 }
             }
 
-            primaryKey = _defaults.primaryKey;
             foreach (var keyValuePair in _defaults) { Add(keyValuePair.Key, keyValuePair.Value, false); }
         }
         public virtual S Default<S>(Expression<Func<T, S>> propertyExpression)
@@ -80,16 +80,12 @@ namespace NCDO.CDOMemory
         }
 
         #region Overrides of CDO_Record
+        private object _pkValue = null; //default PK value ~ performance CRUD
         /// <inheritdoc />
         public override string GetId()
         {
-            if (string.IsNullOrEmpty(primaryKey))
-                return _id;
-            var pkValue = this.Get(primaryKey).ToString().Trim('"');
-            var defaultValueAttribute = this.GetType().GetProperty(primaryKey, BindingFlags.Public | BindingFlags.Instance)?.GetCustomAttribute<DefaultValueAttribute>();
-            return defaultValueAttribute != null
-                ? (defaultValueAttribute.Value.ToString() == pkValue ? _id : pkValue)
-                : (string.IsNullOrEmpty(pkValue) ? _id : pkValue);
+            var pkValue = this.Get(primaryKey);
+            return _pkValue == pkValue ? _id : pkValue.ToString();
         }
 
         #endregion
@@ -111,7 +107,7 @@ namespace NCDO.CDOMemory
         /// <summary>
         /// this field is used in the generic version of CDO_Record
         /// </summary>
-        protected internal string primaryKey;
+        protected internal string primaryKey = "";
 
         #region Constructor
         public CDO_Record(params JsonPair[] items) : base(items)
@@ -237,15 +233,12 @@ namespace NCDO.CDOMemory
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return string.Equals(GetId(), other.GetId());
+            return string.Equals(GetId(), other.Get(GetId()));
         }
 
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != this.GetType()) return false;
             return Equals((CDO_Record)obj);
         }
 
