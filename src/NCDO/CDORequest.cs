@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using NCDO.Extensions;
 using NCDO.Interfaces;
+using Newtonsoft.Json;
 
 namespace NCDO
 {
@@ -28,7 +29,11 @@ namespace NCDO
         {
             Response?.ThrowOnErrorResponse();
             if (Success.HasValue && !Success.Value)
-                throw new CDOException(ResponseMessage.StatusCode.ToString(), ResponseMessage.RequestMessage.RequestUri.ToString());
+            {
+                var errorMessage = JsonConvert.SerializeObject(Response, Formatting.Indented);
+                throw new CDOException(ResponseMessage.StatusCode.ToString(),
+                    string.IsNullOrEmpty(errorMessage) ? $"Server error for request: {ResponseMessage.RequestMessage.RequestUri}" : errorMessage);
+            }
         }
 
         public bool CdoMemory { get; set; } = true;

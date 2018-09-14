@@ -6,6 +6,8 @@ using System.IO;
 using System.Json;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using NCDO.Definitions;
 using NCDO.Extensions;
 using NCDO.Interfaces;
@@ -59,9 +61,21 @@ namespace NCDO.CDOMemory
         /// <param name="notify"></param>
         public void Add(T item, MergeMode mergeMode, bool notify = true)
         {
+            _internalAdd(item, mergeMode, notify);
+        }
+        /// <summary>
+        /// Internal Add fn
+        /// justAdd to skip contains check ~ performance
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="mergeMode"></param>
+        /// <param name="notify"></param>
+        /// <param name="justAdd"></param>
+        private void _internalAdd(T item, MergeMode mergeMode, bool notify = true, bool justAdd = false)
+        {
             lock (_list)
             {
-                if (!_list.Contains(item))
+                if (justAdd || !_list.Contains(item))
                 {
                     _list.Add(item);
                     item.PropertyChanged -= Item_PropertyChanged;
@@ -169,17 +183,19 @@ namespace NCDO.CDOMemory
 
         public void AddRange(IEnumerable<T> items)
         {
-            AddRange(items, MergeMode.Append);
+            AddRange(items, MergeMode.Append).Wait();
         }
 
-        public void AddRange(IEnumerable<T> items, MergeMode mergeMode, bool notify = true)
+
+        public async Task AddRange(IEnumerable<T> items, MergeMode mergeMode, bool notify = true)
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
 
+            var emptyList = _list.Count == 0;
             foreach (var item in items)
             {
-                Add(item, mergeMode, notify);
+                _internalAdd(item, mergeMode, notify, emptyList);
             }
         }
 
