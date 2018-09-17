@@ -17,6 +17,8 @@ namespace NCDO.CDOMemory
 {
     public partial class CDO_Record<T> : CDO_Record where T : CDO_Record, new()
     {
+        protected static T _defaults = new T();
+
         #region Constructor
         public CDO_Record(params JsonPair[] items) : this()
         {
@@ -28,14 +30,17 @@ namespace NCDO.CDOMemory
             AddRange(items);
         }
 
-        public CDO_Record()
+        public CDO_Record() : base()
         {
-            if (_defaults != null) InitializeRecord(); //only initialize after _defaults instantiation
+            if (_defaults?.Count == 0) InitializeRecord(); //only initialize after _defaults instantiation
+            primaryKey = _defaults?.primaryKey;
+            if (!string.IsNullOrEmpty(primaryKey))
+                _pkValue = _defaults?.Get(primaryKey);
         }
 
         #endregion
 
-        protected static T _defaults = new T();
+
         private void InitializeRecord()
         {
             lock (_defaults)
@@ -57,11 +62,9 @@ namespace NCDO.CDOMemory
                                 : defaultValueAttribute.Value);
                         }
 
-                        if (string.IsNullOrEmpty(primaryKey) && propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
+                        if (string.IsNullOrEmpty(_defaults.primaryKey) && propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
                         {
                             _defaults.primaryKey = propertyInfo.Name;
-                            primaryKey = propertyInfo.Name;
-                            _pkValue = _defaults.Get(primaryKey);
                         }
                     }
                 }
