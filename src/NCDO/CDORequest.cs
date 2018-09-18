@@ -30,7 +30,7 @@ namespace NCDO
             Response?.ThrowOnErrorResponse();
             if (Success.HasValue && !Success.Value)
             {
-                var errorMessage = JsonConvert.SerializeObject(Response, Formatting.Indented);
+                var errorMessage = Response?.ToString();
                 throw new CDOException(ResponseMessage.StatusCode.ToString(),
                     string.IsNullOrEmpty(errorMessage) ? $"Server error for request: {ResponseMessage.RequestMessage.RequestUri}" : errorMessage);
             }
