@@ -379,7 +379,7 @@ namespace NCDO
 
         public async Task SaveChanges(CDO_Table<R> tableRef = null)
         {
-            await _saveChangesMutex.WaitAsync();
+            await _saveChangesMutex.WaitAsync(default(CancellationToken));
             try
             {
                 if (tableRef == null) tableRef = TableReference;
@@ -508,10 +508,16 @@ namespace NCDO
         #endregion
 
         #region Request logic
-
         public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpResponseMessage, CDORequest, Task> processResponse)
         {
-            await _requestMutex.WaitAsync();
+            if (cDORequest.Method == HttpMethod.Get)
+            {
+                //wait for savechanges to complete before launching a read.
+                await _saveChangesMutex.WaitAsync(default(CancellationToken));
+                _saveChangesMutex.Release();
+            }
+
+            await _requestMutex.WaitAsync(default(CancellationToken));
             try
             {
                 using (var request = new HttpRequestMessage())
