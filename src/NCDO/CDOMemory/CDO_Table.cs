@@ -415,7 +415,23 @@ namespace NCDO.CDOMemory
                 {
                     //Temp-table defined with "like" takes the indices from the table and thus need to be unique
                     //add a negative generated id
-                    record["ID"] = count--;
+                    record[string.IsNullOrEmpty(record.primaryKey) ? "ID" : record.primaryKey] = count--;
+                }
+            }
+
+            return this;
+        }
+
+        public CDO_Table<T> RenumberNegativeIds()
+        {
+            var count = -1;
+            if (Count > 0)
+            {
+                foreach (T record in _list.Where(i => i[string.IsNullOrEmpty(i.primaryKey) ? "ID" : i.primaryKey] < 0))
+                {
+                    //Temp-table defined with "like" takes the indices from the table and thus need to be unique
+                    //add a negative generated id
+                    record[string.IsNullOrEmpty(record.primaryKey) ? "ID" : record.primaryKey] = count--;
                 }
             }
 

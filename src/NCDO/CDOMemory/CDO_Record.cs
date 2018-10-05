@@ -17,7 +17,8 @@ namespace NCDO.CDOMemory
 {
     public partial class CDO_Record<T> : CDO_Record where T : CDO_Record, new()
     {
-        protected static T _defaults = new T();
+        protected static JsonObject Defaults = new T();
+        private static string _primaryKey = "";
 
         #region Constructor
         public CDO_Record(params JsonPair[] items) : this()
@@ -30,12 +31,12 @@ namespace NCDO.CDOMemory
             AddRange(items);
         }
 
-        public CDO_Record() : base()
+        public CDO_Record()
         {
-            if (_defaults?.Count == 0) InitializeRecord(); //only initialize after _defaults instantiation
-            primaryKey = _defaults?.primaryKey;
+            if (Defaults?.Count == 0) InitializeRecord(); //only initialize after _defaults instantiation
+            primaryKey = _primaryKey;
             if (!string.IsNullOrEmpty(primaryKey))
-                _pkValue = _defaults?.Get(primaryKey);
+                _pkValue = Defaults?.Get(primaryKey);
         }
 
         #endregion
@@ -43,9 +44,9 @@ namespace NCDO.CDOMemory
 
         private void InitializeRecord()
         {
-            lock (_defaults)
+            lock (Defaults)
             {
-                if (_defaults.Count == 0)
+                if (Defaults.Count == 0)
                 {
                     var props = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
                     foreach (var propertyInfo in props)
@@ -56,21 +57,21 @@ namespace NCDO.CDOMemory
                             var targetType = propertyInfo.PropertyType.IsNullableType()
                                 ? Nullable.GetUnderlyingType(propertyInfo.PropertyType)
                                 : propertyInfo.PropertyType;
-                            propertyInfo.SetValue(_defaults,
+                            propertyInfo.SetValue(Defaults,
                             defaultValueAttribute.Value != null
                                 ? Convert.ChangeType(defaultValueAttribute.Value, targetType)
                                 : defaultValueAttribute.Value);
                         }
 
-                        if (string.IsNullOrEmpty(_defaults.primaryKey) && propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
+                        if (string.IsNullOrEmpty(_primaryKey) && propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
                         {
-                            _defaults.primaryKey = propertyInfo.Name;
+                            _primaryKey = propertyInfo.Name;
                         }
                     }
                 }
             }
 
-            foreach (var keyValuePair in _defaults) { Add(keyValuePair.Key, keyValuePair.Value, false); }
+            foreach (var keyValuePair in Defaults) { Add(keyValuePair.Key, keyValuePair.Value, false); }
         }
         public virtual S Default<S>(Expression<Func<T, S>> propertyExpression)
         {
@@ -93,6 +94,18 @@ namespace NCDO.CDOMemory
         }
 
         #endregion
+
+
+        public override ICollection<string> Keys
+        {
+            get
+            {
+                lock (Defaults)
+                {
+                    return Defaults != null ? Defaults.Keys : base.Keys;
+                }
+            }
+        }
     }
 
 
@@ -127,6 +140,10 @@ namespace NCDO.CDOMemory
         }
 
         #endregion
+
+        //redefine is needed to allow override by generic CDO_Record
+        public new virtual ICollection<string> Keys => base.Keys;
+
         #region Implementation of ICloudDataRecord
 
         /// <inheritdoc />
