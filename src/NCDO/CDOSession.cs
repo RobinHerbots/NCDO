@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using NCDO.Definitions;
 using NCDO.Interfaces;
 using System.Json;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Security.Authentication;
 using System.Security.Cryptography;
@@ -32,7 +33,21 @@ namespace NCDO
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
-            HttpClient = _options.SslProtocols == SslProtocols.Default ? new HttpClient() : new HttpClient(new HttpClientHandler(){ SslProtocols = _options.SslProtocols });
+            if (_options.SslProtocols == SslProtocols.Default) HttpClient = new HttpClient();
+            else
+            {
+                try
+                {
+                    HttpClient = new HttpClient(new HttpClientHandler() { SslProtocols = _options.SslProtocols });
+                }
+                catch (PlatformNotSupportedException ex)
+                {
+                    HttpClient = new HttpClient();
+                    if (Enum.TryParse(_options.SslProtocols.ToString(), out SecurityProtocolType spt))
+                        ServicePointManager.SecurityProtocol = spt;
+                }
+            }
+
             HttpClient.DefaultRequestHeaders.ConnectionClose = false;
             HttpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
             HttpClient.DefaultRequestHeaders.Pragma.Add(NameValueHeaderValue.Parse("no-cache"));
@@ -74,7 +89,7 @@ namespace NCDO
         public async Task Login()
         {
             ThrowIfDisposed();
-            
+
             var urlBuilder = new StringBuilder(_options.ServiceUri.AbsoluteUri);
             using (var request = new HttpRequestMessage())
             {
