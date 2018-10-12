@@ -22,7 +22,7 @@ namespace NCDO
     /// </summary>
     public partial class CDO : ACloudDataObject<JsonObject, CDO_Dataset, CDO_Record>
     {
-        public CDO(string respource, ICDOSession cDOSession = null, bool autoFill = false) : base(respource, cDOSession,
+        public CDO(string resource, ICDOSession cDOSession = null, bool autoFill = false) : base(resource, cDOSession,
             autoFill)
         {
         }

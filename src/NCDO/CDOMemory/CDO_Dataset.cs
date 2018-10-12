@@ -40,13 +40,16 @@ namespace NCDO.CDOMemory
         protected internal virtual void ImportTables(JsonValue value)
         {
             //Import tables
-            foreach (var key in ((JsonObject)value).Keys)
+            if (value != null)
             {
-                if (!key.StartsWith("prods:"))
+                foreach (var key in ((JsonObject)value).Keys)
                 {
-                    if (value.Get(key) is IEnumerable<JsonValue> tTable)
-                        Add<CDO_Record>(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
-                    else Add<CDO_Record>(key, new CDO_Table<CDO_Record>());
+                    if (!key.StartsWith("prods:"))
+                    {
+                        if (value.Get(key) is IEnumerable<JsonValue> tTable)
+                            Add<CDO_Record>(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
+                        else Add<CDO_Record>(key, new CDO_Table<CDO_Record>());
+                    }
                 }
             }
         }
