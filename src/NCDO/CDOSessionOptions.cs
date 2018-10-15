@@ -71,12 +71,20 @@ namespace NCDO
                             var clientCredential = new ClientCredential(ClientId, ClientSecret);
                             var tokenResult = authContext.AcquireTokenAsync(Audience, clientCredential).Result;
                             return tokenResult.AccessToken;
+                        case AuthenticationModel.Bearer_WIA:
+                            if (ClientId == null) throw new ArgumentNullException(nameof(ClientId));
+                            if (Authority == null) throw new ArgumentNullException(nameof(Authority));
+                            if (Audience == null) throw new ArgumentNullException(nameof(Audience));
+                            var authContext2 = new AuthenticationContext(Authority, _tokenCache);
+                            var userCredential = new UserCredential("");
+                            var tokenResult2 = authContext2.AcquireTokenAsync(Audience, ClientId, userCredential).Result;
+                            return tokenResult2.AccessToken;
                     }
                 }
 
                 return _token;
             }
-            protected set => _token = value; 
+            protected set => _token = value;
         }
 
         /// <summary>

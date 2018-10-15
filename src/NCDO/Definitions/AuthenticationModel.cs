@@ -4,7 +4,8 @@ namespace NCDO.Definitions
     {
         Anonymous,
         Basic,
-        Bearer
+        Bearer,
+        Bearer_WIA
     }
 
 }
