@@ -36,15 +36,19 @@ The Authentication model is specified in the CDOSessionOptions and passed in the
 Supported protocols:
 - anonymous
 - basic
-- bearer 
+- bearer
+- bearer_WIA (Azure authentication through Windows Integrated Authentication)
 
 ### Remarks
 
 Any contributions (code, documentation) is also welcome. 
 
+#### bearer_WIA
+Windows Integrated Authentication needs to be enabled in AAD (Seamless single sign-on).
+
 #### Additions to api spec
 
-- added ICloudDataObject.Get
+- ICloudDataObject.Get
 
         /// <summary>
         ///     Searches for a record in a table referenced in CDO memory
@@ -53,3 +57,6 @@ Any contributions (code, documentation) is also welcome.
         /// </summary>
         /// <returns></returns>
         Task<D> Get(Expression<Func<R, bool>> filter);
+
+- CDOSession.ChallengeToken
+    Returns the authentication token for the given authentication model
