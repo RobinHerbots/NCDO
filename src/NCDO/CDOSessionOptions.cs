@@ -76,7 +76,7 @@ namespace NCDO
                             if (Authority == null) throw new ArgumentNullException(nameof(Authority));
                             if (Audience == null) throw new ArgumentNullException(nameof(Audience));
                             var authContext2 = new AuthenticationContext(Authority, _tokenCache);
-                            var userCredential = new UserCredential("");
+                            var userCredential = new UserCredential();
                             var tokenResult2 = authContext2.AcquireTokenAsync(Audience, ClientId, userCredential).Result;
                             return tokenResult2.AccessToken;
                     }
