@@ -135,6 +135,7 @@ namespace NCDO
         public event EventHandler<CDOOfflineEventArgs> Offline;
 
         public AuthenticationModel AuthenticationModel => _options.AuthenticationModel;
+        public string ChallengeToken => _options.ChallengeToken;
         public ICollection<Uri> CatalogURIs { get; } = new List<Uri>();
         public string ClientContextId { get; set; }
         public ICloudDataObject[] CDOs { get; set; }
