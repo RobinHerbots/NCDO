@@ -40,7 +40,19 @@ namespace NCDO
         /// <summary>
         /// Gets or sets the challenge to put in the "WWW-Authenticate" header.
         /// </summary>
-        public string Challenge => AuthenticationModel.ToString();
+        public string Challenge
+        {
+            get
+            {
+                switch (AuthenticationModel)
+                {
+                    case AuthenticationModel.Bearer_WIA:
+                        return AuthenticationModel.Bearer.ToString();
+                    default:
+                        return AuthenticationModel.ToString();
+                }
+            }
+        }
 
         /// <summary>
         /// The token passed can be overruled by strictly setting the token in the options
