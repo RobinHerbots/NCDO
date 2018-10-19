@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Security.Authentication;
 using System.Text;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
@@ -101,8 +102,8 @@ namespace NCDO
 
         /// <summary>
         /// Specify SslProtocols required
-        /// Ex: SslProtocols.Tls12 | SslProtocols.Tls11 | SslProtocols.Tls
+        /// Ex: Tls12 | Tls11 | Tls
         /// </summary>
-        public SslProtocols SslProtocols { get; set; } = SslProtocols.Default;
+        public SecurityProtocolType SecurityProtocol { get; set; }
     }
 }

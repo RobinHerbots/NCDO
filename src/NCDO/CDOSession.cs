@@ -33,20 +33,9 @@ namespace NCDO
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
-            if (_options.SslProtocols == SslProtocols.Default) HttpClient = new HttpClient();
-            else
-            {
-                try
-                {
-                    HttpClient = new HttpClient(new HttpClientHandler() { SslProtocols = _options.SslProtocols });
-                }
-                catch (PlatformNotSupportedException ex)
-                {
-                    HttpClient = new HttpClient();
-                    if (Enum.TryParse(_options.SslProtocols.ToString(), out SecurityProtocolType spt))
-                        ServicePointManager.SecurityProtocol = spt;
-                }
-            }
+            HttpClient = new HttpClient();
+            //HttpClient = new HttpClient(new HttpClientHandler() { SslProtocols = _options.SslProtocols });  //this is not supported in older frameworks & problematic in Outlook VSTO
+             ServicePointManager.SecurityProtocol = _options.SecurityProtocol;
 
             HttpClient.DefaultRequestHeaders.ConnectionClose = false;
             HttpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
