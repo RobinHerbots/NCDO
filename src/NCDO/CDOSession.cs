@@ -23,7 +23,7 @@ namespace NCDO
     /// </summary>
     public partial class CDOSession : ICDOSession
     {
-        private CDOSessionOptions _options;
+        private readonly CDOSessionOptions _options;
 
         #region Constructor
 
@@ -35,17 +35,19 @@ namespace NCDO
             //init httpclient
             HttpClient = new HttpClient();
             //HttpClient = new HttpClient(new HttpClientHandler() { SslProtocols = _options.SslProtocols });  //this is not supported in older frameworks & problematic in Outlook VSTO
-             ServicePointManager.SecurityProtocol = _options.SecurityProtocol;
+            ServicePointManager.SecurityProtocol = _options.SecurityProtocol;
 
             HttpClient.DefaultRequestHeaders.ConnectionClose = false;
             HttpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
             HttpClient.DefaultRequestHeaders.Pragma.Add(NameValueHeaderValue.Parse("no-cache"));
             HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
+
         #endregion
 
         /// <inheritdoc />
         public Uri ServiceURI => _options.ServiceUri;
+
         public string UserName => _options.ClientId;
         public HttpClient HttpClient { get; }
 
@@ -57,7 +59,8 @@ namespace NCDO
             //add authorization if needed
             if (AuthenticationModel != AuthenticationModel.Anonymous)
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue(_options.Challenge, _options.ChallengeToken);
+                request.Headers.Authorization =
+                    new AuthenticationHeaderValue(_options.Challenge, _options.ChallengeToken);
             }
         }
 
@@ -148,6 +151,7 @@ namespace NCDO
         }
 
         public int PingInterval { get; set; }
+
         public IEnumerable<Service> Services
         {
             get
@@ -157,6 +161,7 @@ namespace NCDO
                 {
                     services.AddRange(catalog.Value.Services);
                 }
+
                 return services;
             }
         }
@@ -181,11 +186,14 @@ namespace NCDO
         }
 
         #region IDisposable Support
+
         ~CDOSession()
         {
             Dispose(false);
         }
+
         private bool _disposed;
+
         public void Dispose()
         {
             Dispose(true);
@@ -200,12 +208,14 @@ namespace NCDO
             HttpClient?.Dispose();
             _disposed = true;
         }
+
         /// <summary>Throws if this class has been disposed.</summary>
         protected void ThrowIfDisposed()
         {
             if (_disposed)
                 throw new ObjectDisposedException(this.GetType().Name);
         }
+
         #endregion
     }
 }
