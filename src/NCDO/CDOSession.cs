@@ -10,6 +10,7 @@ using NCDO.Definitions;
 using NCDO.Interfaces;
 using System.Json;
 using System.Linq.Expressions;
+using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Security.Authentication;
 using System.Security.Cryptography;
@@ -35,13 +36,17 @@ namespace NCDO
             //init httpclient
             HttpClient = new HttpClient();
             //HttpClient = new HttpClient(new HttpClientHandler() { SslProtocols = _options.SslProtocols });  //this is not supported in older frameworks & problematic in Outlook VSTO
-             ServicePointManager.SecurityProtocol = _options.SecurityProtocol;
+            ServicePointManager.SecurityProtocol = _options.SecurityProtocol;
 
             HttpClient.DefaultRequestHeaders.ConnectionClose = false;
             HttpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
             HttpClient.DefaultRequestHeaders.Pragma.Add(NameValueHeaderValue.Parse("no-cache"));
             HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
         }
+
+
         #endregion
 
         /// <inheritdoc />
@@ -120,6 +125,12 @@ namespace NCDO
             throw new NotImplementedException();
         }
 
+        private void NetworkChange_NetworkAvailabilityChanged(object sender, NetworkAvailabilityEventArgs e)
+        {
+            if (e.IsAvailable)
+                Online?.Invoke(this, new CDOEventArgs() { Session = this });
+            else Offline?.Invoke(this, new CDOOfflineEventArgs() { Session = this });
+        }
         public event EventHandler<CDOEventArgs> Online;
         public event EventHandler<CDOOfflineEventArgs> Offline;
 

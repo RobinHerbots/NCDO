@@ -183,11 +183,11 @@ namespace NCDO.CDOMemory
 
         public void AddRange(IEnumerable<T> items)
         {
-            AddRange(items, MergeMode.Append).Wait();
+            AddRange(items, MergeMode.Append);
         }
 
 
-        public async Task AddRange(IEnumerable<T> items, MergeMode mergeMode, bool notify = true)
+        public void AddRange(IEnumerable<T> items, MergeMode mergeMode, bool notify = true)
         {
             if (items == null)
                 throw new ArgumentNullException(nameof(items));

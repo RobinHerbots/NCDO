@@ -118,10 +118,6 @@ namespace NCDO.CDOMemory
         protected readonly string _id = Guid.NewGuid().ToString();
 
         /// <summary>
-        ///     Used by the CDO to do automatic data mapping for any error string passed back from backend with before-imaging data
-        /// </summary>
-        private string _errorString;
-        /// <summary>
         /// this field is used in the generic version of CDO_Record
         /// </summary>
         protected internal string primaryKey = "";
