@@ -24,7 +24,7 @@ namespace NCDO
     /// </summary>
     public partial class CDOSession : ICDOSession
     {
-        private CDOSessionOptions _options;
+        private readonly CDOSessionOptions _options;
 
         #region Constructor
 
@@ -46,11 +46,11 @@ namespace NCDO
             NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
         }
 
-
         #endregion
 
         /// <inheritdoc />
         public Uri ServiceURI => _options.ServiceUri;
+
         public string UserName => _options.ClientId;
         public HttpClient HttpClient { get; }
 
@@ -62,7 +62,8 @@ namespace NCDO
             //add authorization if needed
             if (AuthenticationModel != AuthenticationModel.Anonymous)
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue(_options.Challenge, _options.ChallengeToken);
+                request.Headers.Authorization =
+                    new AuthenticationHeaderValue(_options.Challenge, _options.ChallengeToken);
             }
         }
 
@@ -159,6 +160,7 @@ namespace NCDO
         }
 
         public int PingInterval { get; set; }
+
         public IEnumerable<Service> Services
         {
             get
@@ -168,6 +170,7 @@ namespace NCDO
                 {
                     services.AddRange(catalog.Value.Services);
                 }
+
                 return services;
             }
         }
@@ -192,11 +195,14 @@ namespace NCDO
         }
 
         #region IDisposable Support
+
         ~CDOSession()
         {
             Dispose(false);
         }
+
         private bool _disposed;
+
         public void Dispose()
         {
             Dispose(true);
@@ -211,12 +217,14 @@ namespace NCDO
             HttpClient?.Dispose();
             _disposed = true;
         }
+
         /// <summary>Throws if this class has been disposed.</summary>
         protected void ThrowIfDisposed()
         {
             if (_disposed)
                 throw new ObjectDisposedException(this.GetType().Name);
         }
+
         #endregion
     }
 }
