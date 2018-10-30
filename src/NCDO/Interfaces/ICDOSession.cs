@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NCDO.Definitions;
 using System.Json;
+using System.Threading;
 using NCDO.Catalog;
 using NCDO.Events;
 
@@ -103,7 +104,7 @@ namespace NCDO.Interfaces
         /// <summary>
         /// Starts a user login session on the current CDOSession object by sending an HTTP request with user credentials to a URI for a specified Mobile or Web application.
         /// </summary>
-        Task Login();
+        Task Login(CancellationToken cancellationToken = default(CancellationToken));
         /// <summary>
         /// Terminates the login session on the Mobile or Web application managed by the current CDOSession object, and invalidates any session currently maintained by the server.
         /// </summary>

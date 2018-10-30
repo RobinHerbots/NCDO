@@ -14,6 +14,7 @@ using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Security.Authentication;
 using System.Security.Cryptography;
+using System.Threading;
 using NCDO.Catalog;
 using NCDO.Events;
 
@@ -81,8 +82,9 @@ namespace NCDO
 
         protected virtual string _loginURI { get; } = "/static/home.html";
 
-        public async Task Login()
+        public async Task Login(CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
             var urlBuilder = new StringBuilder(_options.ServiceUri.AbsoluteUri);
@@ -90,7 +92,7 @@ namespace NCDO
             {
                 await PrepareLoginRequest(request, urlBuilder);
                 await OnOpenRequest(HttpClient, request);
-                var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+                var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
                 await ProcessLoginResponse(response);
             }
         }

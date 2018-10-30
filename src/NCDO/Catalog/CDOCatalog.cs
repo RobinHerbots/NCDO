@@ -5,6 +5,7 @@ using System.Json;
 using System.Net;
 using System.Net.Http;
 using System.Security.Authentication;
+using System.Threading;
 using System.Threading.Tasks;
 using NCDO.Interfaces;
 using NCDO.Extensions;
@@ -22,23 +23,25 @@ namespace NCDO.Catalog
             this._cDOSession = cDOSession;
         }
 
-        private async Task<ICDOCatalog> Load()
+        private async Task<ICDOCatalog> Load(CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             using (var request = new HttpRequestMessage())
             {
                 request.Method = new HttpMethod("GET");
                 await _cDOSession.OnOpenRequest(_cDOSession.HttpClient, request);
                 request.RequestUri = _catalogUri;
 
-                var response = await _cDOSession.HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead);
-                await ProcessResponse(_cDOSession.HttpClient, response);
+                var response = await _cDOSession.HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken);
+                await ProcessResponse(_cDOSession.HttpClient, response, cancellationToken);
             }
 
             return this;
         }
 
-        public virtual async Task ProcessResponse(HttpClient client, HttpResponseMessage response)
+        public virtual async Task ProcessResponse(HttpClient client, HttpResponseMessage response, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if ((response.Headers.TransferEncodingChunked.HasValue && response.Headers.TransferEncodingChunked.Value) ||
                 response.Content.Headers.ContentLength > 0)
             {
@@ -62,9 +65,10 @@ namespace NCDO.Catalog
             }
         }
 
-        public static async Task<ICDOCatalog> Load(Uri catalogUri, CDOSession cDOSession)
+        public static async Task<ICDOCatalog> Load(Uri catalogUri, CDOSession cDOSession, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await new CDOCatalog(catalogUri, cDOSession).Load();
+            cancellationToken.ThrowIfCancellationRequested();
+            return await new CDOCatalog(catalogUri, cDOSession).Load(cancellationToken);
         }
 
         public string Version { get; private set; }

@@ -152,42 +152,47 @@ namespace NCDO
             throw new NotImplementedException();
         }
 
-        public async Task<ICDORequest> Fill(QueryRequest queryRequest = null)
+        public async Task<ICDORequest> Fill(QueryRequest queryRequest = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Read(queryRequest);
+            cancellationToken.ThrowIfCancellationRequested();
+            return await Read(queryRequest, cancellationToken);
         }
 
-        public async Task<ICDORequest> Fill(string filter)
+        public async Task<ICDORequest> Fill(string filter, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Read(filter);
+            cancellationToken.ThrowIfCancellationRequested();
+            return await Read(filter, cancellationToken);
         }
 
-        public async Task<ICDORequest> Fill(Expression<Func<R, bool>> filter)
+        public async Task<ICDORequest> Fill(Expression<Func<R, bool>> filter, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Fill(new QueryRequest() { ABLFilter = filter.ToABLFIlter() });
+            cancellationToken.ThrowIfCancellationRequested();
+            return await Fill(new QueryRequest() { ABLFilter = filter.ToABLFIlter() }, cancellationToken);
         }
 
         /// <inheritdoc />
-        public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false)
+        public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             R record = null;
             if (TableReference?.JsonType == JsonType.Array)
                 record = TableReference.FirstOrDefault(filter.Compile());
 
             if (record == null && autoFetch)
             {
-                await Fill(filter);
-                return await Find(filter);
+                await Fill(filter, cancellationToken);
+                return await Find(filter, cancellationToken: cancellationToken);
             }
 
             return record;
         }
 
         /// <inheritdoc />
-        public async Task<D> Get(Expression<Func<R, bool>> filter)
+        public async Task<D> Get(Expression<Func<R, bool>> filter, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             BeforeRead += ACloudDataObject_BeforeRead;
-            var read = await Read(filter);
+            var read = await Read(filter, cancellationToken);
             BeforeRead -= ACloudDataObject_BeforeRead;
 
             if (read.Success.HasValue && read.Success.Value)
@@ -205,9 +210,10 @@ namespace NCDO
             e.Request.CdoMemory = false;
         }
 
-        public async Task<R> FindById(string id, bool autoFetch = false)
+        public async Task<R> FindById(string id, bool autoFetch = false, CancellationToken cancellationToken = default(CancellationToken))
         {
-            var result = await Find(r => r.GetId() == id);
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await Find(r => r.GetId() == id, cancellationToken: cancellationToken);
             if (result == null)
             {
                 var defaultsFieldInfo = typeof(R).GetField("_defaults",
@@ -221,8 +227,8 @@ namespace NCDO
                     primaryKey = (string)pkFieldInfo.GetValue(defaultsFieldInfo.GetValue(null));
                 }
 
-                await Fill($"{primaryKey ?? "ID"} = '{id}'");
-                result = await Find(r => r.GetId() == id);
+                await Fill($"{primaryKey ?? "ID"} = '{id}'", cancellationToken);
+                result = await Find(r => r.GetId() == id, cancellationToken: cancellationToken);
             }
 
             return result;
@@ -278,8 +284,9 @@ namespace NCDO
             throw new CDOException(string.Format(Properties.Resources.API_InternalError, "HasData"));
         }
 
-        public async Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null)
+        public async Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var operationDefinition = VerifyOperation(operation);
             //init request if needed
             var cDORequest = new CDORequest
@@ -296,21 +303,23 @@ namespace NCDO
 
             BeforeInvoke?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
-            await DoRequest(cDORequest, ProcessInvokeResponse);
+            await DoRequest(cDORequest, ProcessInvokeResponse, cancellationToken);
             AfterInvoke?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
 
             return cDORequest;
         }
 
-        public async Task<ICDORequest> Read(QueryRequest queryRequest = null)
+        public async Task<ICDORequest> Read(QueryRequest queryRequest = null, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             return await Read(queryRequest?.ToString(_resourceDefinition.Operations
-                .FirstOrDefault(o => o.Type == OperationType.Read)?.Capabilities));
+                .FirstOrDefault(o => o.Type == OperationType.Read)?.Capabilities), cancellationToken);
         }
 
-        public async Task<ICDORequest> Read(string filter)
+        public async Task<ICDORequest> Read(string filter, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var operationDefinition = VerifyOperation(null, OperationType.Read);
 
             //setup filter for get request
@@ -334,7 +343,7 @@ namespace NCDO
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             BeforeRead?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
-            await DoRequest(cDORequest, ProcessCRUDResponse);
+            await DoRequest(cDORequest, ProcessCRUDResponse, cancellationToken);
             AfterFill?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             AfterRead?.Invoke(this,
@@ -343,9 +352,10 @@ namespace NCDO
             return cDORequest;
         }
 
-        public async Task<ICDORequest> Read(Expression<Func<R, bool>> filter)
+        public async Task<ICDORequest> Read(Expression<Func<R, bool>> filter, CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Read(new QueryRequest() { ABLFilter = filter.ToABLFIlter() });
+            cancellationToken.ThrowIfCancellationRequested();
+            return await Read(new QueryRequest() { ABLFilter = filter.ToABLFIlter() }, cancellationToken);
         }
 
         public void ReadLocal()
@@ -377,8 +387,9 @@ namespace NCDO
             throw new CDOException(string.Format(Properties.Resources.API_InternalError, "Remove"));
         }
 
-        public async Task SaveChanges(CDO_Table<R> tableRef = null)
+        public async Task SaveChanges(CDO_Table<R> tableRef = null, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             await _saveChangesMutex.WaitAsync(default(CancellationToken));
             try
             {
@@ -406,7 +417,7 @@ namespace NCDO
                         };
                         BeforeDelete?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
-                        await DoRequest(deleteRequest, ProcessCRUDResponse);
+                        await DoRequest(deleteRequest, ProcessCRUDResponse, cancellationToken);
                         AfterDelete?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
                     }
@@ -428,7 +439,7 @@ namespace NCDO
                         };
                         BeforeCreate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
-                        await DoRequest(createRequest, ProcessCRUDResponse);
+                        await DoRequest(createRequest, ProcessCRUDResponse, cancellationToken);
                         AfterCreate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
                     }
@@ -450,7 +461,7 @@ namespace NCDO
                         };
                         BeforeUpdate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
-                        await DoRequest(updateRequest, ProcessCRUDResponse);
+                        await DoRequest(updateRequest, ProcessCRUDResponse, cancellationToken);
                         AfterUpdate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
                     }
@@ -508,16 +519,17 @@ namespace NCDO
         #endregion
 
         #region Request logic
-        public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpResponseMessage, CDORequest, Task> processResponse)
+        public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpResponseMessage, CDORequest, CancellationToken, Task> processResponse, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (cDORequest.Method == HttpMethod.Get)
             {
                 //wait for savechanges to complete before launching a read.
-                await _saveChangesMutex.WaitAsync(default(CancellationToken));
+                await _saveChangesMutex.WaitAsync(cancellationToken);
                 _saveChangesMutex.Release();
             }
 
-            await _requestMutex.WaitAsync(default(CancellationToken));
+            await _requestMutex.WaitAsync(cancellationToken);
             try
             {
                 using (var request = new HttpRequestMessage())
@@ -532,9 +544,9 @@ namespace NCDO
                         request.Content =
                             new StringContent(cDORequest.ObjParam.ToString(), Encoding.UTF8, "application/json");
                     using (var response = await _cDOSession.HttpClient.SendAsync(request,
-                        HttpCompletionOption.ResponseHeadersRead, default(CancellationToken)))
+                        HttpCompletionOption.ResponseHeadersRead, cancellationToken))
                     {
-                        await processResponse?.Invoke(response, cDORequest);
+                        await processResponse?.Invoke(response, cDORequest, cancellationToken);
                     }
                 }
 
@@ -546,8 +558,9 @@ namespace NCDO
             }
         }
 
-        public virtual async Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request)
+        public virtual async Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             request.Success = response.IsSuccessStatusCode;
             request.ResponseMessage = response;
             //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
@@ -574,9 +587,10 @@ namespace NCDO
             request.ThrowOnError();
         }
 
-        public virtual async Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request)
+        public virtual async Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
-            await ProcessInvokeResponse(response, request);
+            cancellationToken.ThrowIfCancellationRequested();
+            await ProcessInvokeResponse(response, request, cancellationToken);
             if (request.Success.HasValue && request.Success.Value)
                 if (request.Method == HttpMethod.Post)
                 {
@@ -606,13 +620,14 @@ namespace NCDO
 
         #region private 
 
-        private void InitCDO(bool autoFill)
+        private void InitCDO(bool autoFill , CancellationToken cancellationToken = default(CancellationToken))
         {
+            cancellationToken.ThrowIfCancellationRequested();
             VerifyResourceName(Name);
             DetermineMainTable();
             if (autoFill)
             {
-                Fill().Wait();
+                Fill(cancellationToken: cancellationToken).Wait(cancellationToken);
             }
             else _cdoMemory.Init();
         }
@@ -628,7 +643,7 @@ namespace NCDO
                 _cDOSession.Services.FirstOrDefault(s => s.Resources.Any(r => r.Name.Equals(resource)));
             var resourceDefinition = _serviceDefinition?.Resources.FirstOrDefault(r => r.Name.Equals(resource));
             if (resourceDefinition == null)
-                throw new NotSupportedException($"Invalid resourcename {resource}.");
+                throw new NotSupportedException($"Invalid resource name {resource}.");
             return _resourceDefinition = resourceDefinition;
         }
 
