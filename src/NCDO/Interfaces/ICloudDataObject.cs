@@ -20,7 +20,7 @@ namespace NCDO.Interfaces
     /// <summary>
     ///     The CDO provides access to resources in a Cloud Data Service, known as a Cloud Data Resource.
     /// </summary>
-    public interface ICloudDataObject
+    public interface ICloudDataObject : IDisposable
     {
         #region Properties
 

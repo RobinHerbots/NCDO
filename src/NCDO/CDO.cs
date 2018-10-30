@@ -154,19 +154,16 @@ namespace NCDO
 
         public async Task<ICDORequest> Fill(QueryRequest queryRequest = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            cancellationToken.ThrowIfCancellationRequested();
             return await Read(queryRequest, cancellationToken);
         }
 
         public async Task<ICDORequest> Fill(string filter, CancellationToken cancellationToken = default(CancellationToken))
         {
-            cancellationToken.ThrowIfCancellationRequested();
             return await Read(filter, cancellationToken);
         }
 
         public async Task<ICDORequest> Fill(Expression<Func<R, bool>> filter, CancellationToken cancellationToken = default(CancellationToken))
         {
-            cancellationToken.ThrowIfCancellationRequested();
             return await Fill(new QueryRequest() { ABLFilter = filter.ToABLFIlter() }, cancellationToken);
         }
 
@@ -174,6 +171,7 @@ namespace NCDO
         public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
             R record = null;
             if (TableReference?.JsonType == JsonType.Array)
                 record = TableReference.FirstOrDefault(filter.Compile());
@@ -191,6 +189,7 @@ namespace NCDO
         public async Task<D> Get(Expression<Func<R, bool>> filter, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
             BeforeRead += ACloudDataObject_BeforeRead;
             var read = await Read(filter, cancellationToken);
             BeforeRead -= ACloudDataObject_BeforeRead;
@@ -213,6 +212,7 @@ namespace NCDO
         public async Task<R> FindById(string id, bool autoFetch = false, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
             var result = await Find(r => r.GetId() == id, cancellationToken: cancellationToken);
             if (result == null)
             {
@@ -287,6 +287,7 @@ namespace NCDO
         public async Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
             var operationDefinition = VerifyOperation(operation);
             //init request if needed
             var cDORequest = new CDORequest
@@ -312,7 +313,6 @@ namespace NCDO
 
         public async Task<ICDORequest> Read(QueryRequest queryRequest = null, CancellationToken cancellationToken = default(CancellationToken))
         {
-            cancellationToken.ThrowIfCancellationRequested();
             return await Read(queryRequest?.ToString(_resourceDefinition.Operations
                 .FirstOrDefault(o => o.Type == OperationType.Read)?.Capabilities), cancellationToken);
         }
@@ -320,6 +320,7 @@ namespace NCDO
         public async Task<ICDORequest> Read(string filter, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
             var operationDefinition = VerifyOperation(null, OperationType.Read);
 
             //setup filter for get request
@@ -354,7 +355,6 @@ namespace NCDO
 
         public async Task<ICDORequest> Read(Expression<Func<R, bool>> filter, CancellationToken cancellationToken = default(CancellationToken))
         {
-            cancellationToken.ThrowIfCancellationRequested();
             return await Read(new QueryRequest() { ABLFilter = filter.ToABLFIlter() }, cancellationToken);
         }
 
@@ -390,6 +390,7 @@ namespace NCDO
         public async Task SaveChanges(CDO_Table<R> tableRef = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
             await _saveChangesMutex.WaitAsync(default(CancellationToken));
             try
             {
@@ -522,6 +523,8 @@ namespace NCDO
         public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpResponseMessage, CDORequest, CancellationToken, Task> processResponse, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
+
             if (cDORequest.Method == HttpMethod.Get)
             {
                 //wait for savechanges to complete before launching a read.
@@ -561,6 +564,7 @@ namespace NCDO
         public virtual async Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
             request.Success = response.IsSuccessStatusCode;
             request.ResponseMessage = response;
             //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
@@ -590,6 +594,7 @@ namespace NCDO
         public virtual async Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
             await ProcessInvokeResponse(response, request, cancellationToken);
             if (request.Success.HasValue && request.Success.Value)
                 if (request.Method == HttpMethod.Post)
@@ -623,6 +628,7 @@ namespace NCDO
         private void InitCDO(bool autoFill , CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfDisposed();
             VerifyResourceName(Name);
             DetermineMainTable();
             if (autoFill)
@@ -663,6 +669,41 @@ namespace NCDO
                 : _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties.FirstOrDefault().Key;
             _primaryKey = _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties[_mainTable]
                 .PrimaryKey.FirstOrDefault();
+        }
+
+        #endregion
+
+        #region IDisposable Support
+
+        ~ACloudDataObject()
+        {
+            Dispose(false);
+        }
+
+        private bool _disposed;
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposing || this._disposed)
+                return;
+
+            _requestMutex?.Dispose();
+            _saveChangesMutex?.Dispose();
+
+            _disposed = true;
+        }
+
+        /// <summary>Throws if this class has been disposed.</summary>
+        protected void ThrowIfDisposed()
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(this.GetType().Name);
         }
 
         #endregion
