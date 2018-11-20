@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -76,6 +77,19 @@ namespace NCDO
                 if (!_catalogs.ContainsKey(catalogUri))
                 {
                     _catalogs.Add(catalogUri, await CDOCatalog.Load(catalogUri, this));
+                }
+            }
+        }
+
+        public async Task LoadEmbeddedCatalog(Assembly assembly, string catalogResource)
+        {
+            ThrowIfDisposed();
+            using (var stream = assembly.GetManifestResourceStream(catalogResource))
+            {
+                var catalogUri = new Uri($"file://{catalogResource}");
+                if (!_catalogs.ContainsKey(catalogUri))
+                {
+                    _catalogs.Add(catalogUri, await CDOCatalog.Load((JsonObject) JsonValue.Load(stream), this));
                 }
             }
         }

@@ -23,6 +23,12 @@ namespace NCDO.Catalog
             this._cDOSession = cDOSession;
         }
 
+        private CDOCatalog(JsonObject catalog, CDOSession cDOSession)
+        {
+            this._cDOSession = cDOSession;
+            ProcessCatalogObject(catalog);
+        }
+
         private async Task<ICDOCatalog> Load(CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -32,7 +38,8 @@ namespace NCDO.Catalog
                 await _cDOSession.OnOpenRequest(_cDOSession.HttpClient, request);
                 request.RequestUri = _catalogUri;
 
-                var response = await _cDOSession.HttpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead, cancellationToken);
+                var response = await _cDOSession.HttpClient.SendAsync(request,
+                    HttpCompletionOption.ResponseContentRead, cancellationToken);
                 await ProcessResponse(_cDOSession.HttpClient, response, cancellationToken);
             }
 
@@ -49,26 +56,36 @@ namespace NCDO.Catalog
                 {
                     if (dataStream != null)
                     {
-                        var jsonResponse = JsonObject.Load(dataStream);
-                        if (jsonResponse == null) throw new InvalidDataException("Could not parse catalog data.");
-                        jsonResponse.ThrowOnErrorResponse();
-                        //init catalog from response
-                        Version = jsonResponse.Get("version");
-                        LastModified = jsonResponse.Get("lastModified");
-                        foreach (JsonValue serviceDefinition in jsonResponse.Get("services"))
-                        {
-                            Services.Add(new Service(serviceDefinition));
-                        }
-
+                        ProcessCatalogObject(JsonValue.Load(dataStream), cancellationToken);
                     }
                 }
             }
+        }
+        private void ProcessCatalogObject(JsonValue catalogObject, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (catalogObject == null) throw new InvalidDataException("Could not parse catalog data.");
+            catalogObject.ThrowOnErrorResponse();
+            //init catalog from response
+            Version = catalogObject.Get("version");
+            LastModified = catalogObject.Get("lastModified");
+            foreach (JsonValue serviceDefinition in catalogObject.Get("services"))
+            {
+                Services.Add(new Service(serviceDefinition));
+            }
+
         }
 
         public static async Task<ICDOCatalog> Load(Uri catalogUri, CDOSession cDOSession, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             return await new CDOCatalog(catalogUri, cDOSession).Load(cancellationToken);
+        }
+
+        public static async Task<ICDOCatalog> Load(JsonObject catalog, CDOSession cDOSession, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return new CDOCatalog(catalog, cDOSession);
         }
 
         public string Version { get; private set; }
