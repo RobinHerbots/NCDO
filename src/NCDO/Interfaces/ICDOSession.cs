@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
-using NCDO.Definitions;
-using System.Json;
 using System.Threading;
+using System.Threading.Tasks;
 using NCDO.Catalog;
+using NCDO.Definitions;
 using NCDO.Events;
 
 namespace NCDO.Interfaces

@@ -1,6 +1,6 @@
-using NCDO.Extensions;
 using System.Collections.Generic;
 using System.Json;
+using NCDO.Extensions;
 
 namespace NCDO.Catalog
 {

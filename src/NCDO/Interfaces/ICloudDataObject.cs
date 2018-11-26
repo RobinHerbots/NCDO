@@ -1,19 +1,14 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Json;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Net.Http;
-using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NCDO.Catalog;
 using NCDO.CDOMemory;
 using NCDO.Definitions;
 using NCDO.Events;
-using NCDO.Extensions;
 
 namespace NCDO.Interfaces
 {

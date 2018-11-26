@@ -5,13 +5,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Json;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using NCDO.Definitions;
 using NCDO.Extensions;
 using NCDO.Interfaces;
-using DataRowState = NCDO.Definitions.DataRowState;
 
 namespace NCDO.CDOMemory
 {
@@ -114,7 +110,7 @@ namespace NCDO.CDOMemory
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Item_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void Item_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             OnCollectionChanged(sender, e);
         }
@@ -315,7 +311,7 @@ namespace NCDO.CDOMemory
             return changed;
         }
 
-        private void AddNew(IList<T> list, IEnumerable<T> items, Definitions.DataRowState rowState)
+        private void AddNew(IList<T> list, IEnumerable<T> items, DataRowState rowState)
         {
             if (items != null)
             {

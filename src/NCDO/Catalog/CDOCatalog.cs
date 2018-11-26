@@ -2,13 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Json;
-using System.Net;
 using System.Net.Http;
-using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
-using NCDO.Interfaces;
 using NCDO.Extensions;
+using NCDO.Interfaces;
 
 namespace NCDO.Catalog
 {
@@ -82,7 +80,7 @@ namespace NCDO.Catalog
             return await new CDOCatalog(catalogUri, cDOSession).Load(cancellationToken);
         }
 
-        public static async Task<ICDOCatalog> Load(JsonObject catalog, CDOSession cDOSession, CancellationToken cancellationToken = default(CancellationToken))
+        public static ICDOCatalog Load(JsonObject catalog, CDOSession cDOSession, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             return new CDOCatalog(catalog, cDOSession);

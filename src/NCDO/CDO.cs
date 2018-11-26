@@ -1,4 +1,3 @@
-using NCDO.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Json;
@@ -14,6 +13,8 @@ using NCDO.CDOMemory;
 using NCDO.Definitions;
 using NCDO.Events;
 using NCDO.Extensions;
+using NCDO.Interfaces;
+using NCDO.Properties;
 
 namespace NCDO
 {
@@ -100,7 +101,7 @@ namespace NCDO
             {
                 TableReference?.AcceptChanges();
             }
-            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "AcceptChanges"));
+            else throw new CDOException(string.Format(Resources.API_InternalError, "AcceptChanges"));
         }
 
         //public bool AcceptRowChanges()
@@ -124,7 +125,7 @@ namespace NCDO
             {
                 TableReference?.AddRange(records);
             }
-            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "AddRecords"));
+            else throw new CDOException(string.Format(Resources.API_InternalError, "AddRecords"));
         }
 
         public void Assign(R record)
@@ -133,7 +134,7 @@ namespace NCDO
             {
                 TableReference?.Add(record, MergeMode.Merge);
             }
-            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "Assign"));
+            else throw new CDOException(string.Format(Resources.API_InternalError, "Assign"));
         }
 
         public R Create(R record)
@@ -144,7 +145,7 @@ namespace NCDO
                 return record;
             }
 
-            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "Create"));
+            throw new CDOException(string.Format(Resources.API_InternalError, "Create"));
         }
 
         public void DeleteLocal()
@@ -241,7 +242,7 @@ namespace NCDO
                 return TableReference?.Cast<R>().ToArray();
             }
 
-            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "GetDate"));
+            throw new CDOException(string.Format(Resources.API_InternalError, "GetDate"));
         }
 
         public string[] GetErrors()
@@ -271,7 +272,7 @@ namespace NCDO
                 return TableReference.IsChanged;
             }
 
-            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "HasChanges"));
+            throw new CDOException(string.Format(Resources.API_InternalError, "HasChanges"));
         }
 
         public bool HasData()
@@ -281,7 +282,7 @@ namespace NCDO
                 return (TableReference?.Cast<R>()).Any();
             }
 
-            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "HasData"));
+            throw new CDOException(string.Format(Resources.API_InternalError, "HasData"));
         }
 
         public async Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null, CancellationToken cancellationToken = default(CancellationToken))
@@ -369,7 +370,7 @@ namespace NCDO
             {
                 TableReference.RejectChanges();
             }
-            else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "RejectChanges"));
+            else throw new CDOException(string.Format(Resources.API_InternalError, "RejectChanges"));
         }
 
         //public void RejectRowChanges()
@@ -384,7 +385,7 @@ namespace NCDO
                 return TableReference.Remove(record);
             }
 
-            throw new CDOException(string.Format(Properties.Resources.API_InternalError, "Remove"));
+            throw new CDOException(string.Format(Resources.API_InternalError, "Remove"));
         }
 
         public async Task SaveChanges(CDO_Table<R> tableRef = null, CancellationToken cancellationToken = default(CancellationToken))
@@ -470,7 +471,7 @@ namespace NCDO
                     //all done => accept the changes
                     if (AutoApplyChanges) tableRef.AcceptChanges();
                 }
-                else throw new CDOException(string.Format(Properties.Resources.API_InternalError, "SaveChanges"));
+                else throw new CDOException(string.Format(Resources.API_InternalError, "SaveChanges"));
 
                 AfterSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> { CDO = this, Request = null });
             }

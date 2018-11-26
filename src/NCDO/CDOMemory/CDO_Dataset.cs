@@ -1,11 +1,9 @@
-﻿using NCDO.Extensions;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Json;
 using System.Linq;
-using System.Text;
 using NCDO.Definitions;
-using NCDO.Interfaces;
+using NCDO.Extensions;
 
 namespace NCDO.CDOMemory
 {

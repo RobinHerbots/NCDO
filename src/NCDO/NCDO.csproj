@@ -1,19 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <Configurations>Debug;Release;Staging</Configurations>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Robin Herbots</Authors>
     <Company />
     <Description>.NET Implementation of the CloudDataObject (CDO) used by Progress OpenEdge.</Description>
     <Copyright>Robin Herbots</Copyright>
-    <PackageLicenseUrl>http://opensource.org/licenses/mit-license.php</PackageLicenseUrl>
+    <PackageLicense>MIT</PackageLicense>
     <PackageProjectUrl>https://github.com/RobinHerbots/NCDO</PackageProjectUrl>
     <RepositoryUrl>https://github.com/RobinHerbots/NCDO</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>CDO CloudDataObject openedge .NET</PackageTags>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>openedge.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>openedge.snk</AssemblyOriginatorKeyFile>
+    <DelaySign>false</DelaySign>
+    <TargetFrameworks>net461;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="4.3.0" />

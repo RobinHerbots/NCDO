@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Json;
 using System.Net.Http;
-using System.Text;
 using NCDO.Extensions;
 using NCDO.Interfaces;
-using Newtonsoft.Json;
 
 namespace NCDO
 {

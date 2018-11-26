@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Net;
-using System.Security.Authentication;
 using System.Text;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using NCDO.Definitions;

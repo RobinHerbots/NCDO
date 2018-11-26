@@ -1,23 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
+using System.Json;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
-using System.Threading.Tasks;
-using NCDO.Definitions;
-using NCDO.Interfaces;
-using System.Json;
-using System.Linq.Expressions;
 using System.Net.NetworkInformation;
 using System.Reflection;
-using System.Security.Authentication;
-using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using NCDO.Catalog;
+using NCDO.Definitions;
 using NCDO.Events;
+using NCDO.Interfaces;
 
 namespace NCDO
 {
@@ -81,7 +77,7 @@ namespace NCDO
             }
         }
 
-        public async Task LoadEmbeddedCatalog(Assembly assembly, string catalogResource)
+        public void LoadEmbeddedCatalog(Assembly assembly, string catalogResource)
         {
             ThrowIfDisposed();
             using (var stream = assembly.GetManifestResourceStream(catalogResource))
@@ -89,7 +85,7 @@ namespace NCDO
                 var catalogUri = new Uri($"file://{catalogResource}");
                 if (!_catalogs.ContainsKey(catalogUri))
                 {
-                    _catalogs.Add(catalogUri, await CDOCatalog.Load((JsonObject) JsonValue.Load(stream), this));
+                    _catalogs.Add(catalogUri, CDOCatalog.Load((JsonObject) JsonValue.Load(stream), this));
                 }
             }
         }

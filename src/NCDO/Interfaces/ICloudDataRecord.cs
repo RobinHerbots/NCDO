@@ -13,7 +13,7 @@ namespace NCDO.Interfaces
         /// <summary>
         /// The data (field values) for a record.
         /// </summary>
-        System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>> Data { get; }
+        IEnumerable<KeyValuePair<string, JsonValue>> Data { get; }
         #endregion
 
         #region Methods
