@@ -4,6 +4,13 @@ namespace NCDO.Extensions
 {
     public static class JsonValueExtensions
     {
+        public static string AsString(this JsonValue jsonValue)
+        {
+            return jsonValue is JsonPrimitive jsonPrimitiveValue && jsonPrimitiveValue.JsonType == JsonType.String
+                ? (string) jsonValue
+                : jsonValue.ToString();
+        }
+        
         public static JsonValue Get(this JsonValue jsonValue, string key)
         {
             return jsonValue.ContainsKey(key) ? jsonValue[key] : new JsonPrimitive((string)null);
