@@ -226,8 +226,7 @@ namespace NCDO.Interfaces
         void Sort();
 
 
-        Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken));
-        Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken));
+        Task ProcessResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken));
 
         #endregion
     }

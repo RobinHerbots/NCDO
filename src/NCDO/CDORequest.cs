@@ -9,6 +9,7 @@ namespace NCDO
 {
     public class CDORequest : ICDORequest
     {
+        public bool InvokeOperation { get; set; } = false;
         public IEnumerable<ICDORequest> Batch { get; internal set; }
         public string FnName { get; internal set; }
         public ICloudDataObject CDO { get; internal set; }

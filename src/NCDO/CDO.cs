@@ -293,6 +293,7 @@ namespace NCDO
             //init request if needed
             var cDORequest = new CDORequest
             {
+                InvokeOperation = true,
                 CDO = this,
                 FnName = operationDefinition.Name,
                 ObjParam = _serviceDefinition.UseRequest ? new JsonObject { { "request", inputObject } } : inputObject,
@@ -305,7 +306,7 @@ namespace NCDO
 
             BeforeInvoke?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
-            await DoRequest(cDORequest, ProcessInvokeResponse, cancellationToken);
+            await DoRequest(cDORequest, ProcessResponse, cancellationToken);
             AfterInvoke?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
 
@@ -345,7 +346,7 @@ namespace NCDO
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             BeforeRead?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
-            await DoRequest(cDORequest, ProcessCRUDResponse, cancellationToken);
+            await DoRequest(cDORequest, ProcessResponse, cancellationToken);
             AfterFill?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             AfterRead?.Invoke(this,
@@ -419,7 +420,7 @@ namespace NCDO
                         };
                         BeforeDelete?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
-                        await DoRequest(deleteRequest, ProcessCRUDResponse, cancellationToken);
+                        await DoRequest(deleteRequest, ProcessResponse, cancellationToken);
                         AfterDelete?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
                     }
@@ -441,7 +442,7 @@ namespace NCDO
                         };
                         BeforeCreate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
-                        await DoRequest(createRequest, ProcessCRUDResponse, cancellationToken);
+                        await DoRequest(createRequest, ProcessResponse, cancellationToken);
                         AfterCreate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
                     }
@@ -463,7 +464,7 @@ namespace NCDO
                         };
                         BeforeUpdate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
-                        await DoRequest(updateRequest, ProcessCRUDResponse, cancellationToken);
+                        await DoRequest(updateRequest, ProcessResponse, cancellationToken);
                         AfterUpdate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
                     }
@@ -562,7 +563,7 @@ namespace NCDO
             }
         }
 
-        public virtual async Task ProcessInvokeResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual async Task ProcessResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -588,16 +589,8 @@ namespace NCDO
                     }
                 }
             }
-
-            request.ThrowOnError();
-        }
-
-        public virtual async Task ProcessCRUDResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            ThrowIfDisposed();
-            await ProcessInvokeResponse(response, request, cancellationToken);
-            if (request.Success.HasValue && request.Success.Value)
+            
+            if (!request.InvokeOperation && request.Success.HasValue && request.Success.Value)
                 if (request.Method == HttpMethod.Post)
                 {
                     if (TableReference.New != null)
@@ -620,8 +613,9 @@ namespace NCDO
                     //init cdoMemory
                     _cdoMemory.Init(request.Response);
                 }
-        }
 
+            request.ThrowOnError();
+        }
         #endregion
 
         #region private 

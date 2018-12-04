@@ -10,10 +10,10 @@ namespace NCDO.Extensions
                 ? (string) jsonValue
                 : jsonValue.ToString();
         }
-        
+
         public static JsonValue Get(this JsonValue jsonValue, string key)
         {
-            return jsonValue.ContainsKey(key) ? jsonValue[key] : new JsonPrimitive((string)null);
+            return jsonValue.ContainsKey(key) ? jsonValue[key] : new JsonPrimitive((string) null);
         }
 
         internal static void Set(this JsonValue jsonValue, string key, JsonValue value)
@@ -25,7 +25,8 @@ namespace NCDO.Extensions
         {
             if (jsonValue.ContainsKey("error")) //pas error
             {
-                throw new CDOException(jsonValue.Get("error"), jsonValue.Get("error_description")) { Scope = jsonValue.Get("scope") };
+                throw new CDOException(jsonValue.Get("error"), jsonValue.Get("error_description"))
+                    {Scope = jsonValue.Get("scope")};
             }
 
             if (jsonValue.ContainsKey("_errors")) //progress error
@@ -33,13 +34,14 @@ namespace NCDO.Extensions
                 string code = "";
                 string message = jsonValue.Get("_retVal");
 
-                var errors = (JsonArray)jsonValue.Get("_errors");
+                var errors = (JsonArray) jsonValue.Get("_errors");
                 foreach (var error in errors)
                 {
                     code = error.Get("_errorNum").ToString();
                     if (string.IsNullOrEmpty(message)) message = error.Get("_errorMsg");
                     break;
                 }
+
                 throw new CDOException(code, message);
             }
         }
