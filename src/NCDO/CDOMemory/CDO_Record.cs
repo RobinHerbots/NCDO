@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Json;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -35,7 +36,7 @@ namespace NCDO.CDOMemory
 
         public CDO_Record()
         {
-            if (Defaults?.Count == 0) InitializeRecord(); //only initialize after _defaults instantiation
+            InitializeRecord(); //only initialize after _defaults instantiation
             primaryKey = _primaryKey;
             if (!string.IsNullOrEmpty(primaryKey))
                 _pkValue = Defaults?.Get(primaryKey);
@@ -46,9 +47,10 @@ namespace NCDO.CDOMemory
 
         private void InitializeRecord()
         {
+            if (Defaults == null) return;
             lock (Defaults)
             {
-                if (Defaults.Count == 0)
+                if ((Defaults).Count == 0)
                 {
                     var props = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
                     foreach (var propertyInfo in props)
@@ -237,11 +239,7 @@ namespace NCDO.CDOMemory
 
         public new JsonValue this[string key]
         {
-            get
-            {
-                if (!ContainsKey(key)) base[key] = null;
-                return base[key];
-            }
+            get => base[key];
             set
             {
                 if (ContainsKey(key)) OnPropertyChanging(key);
