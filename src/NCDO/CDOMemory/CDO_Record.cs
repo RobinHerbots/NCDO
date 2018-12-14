@@ -11,7 +11,8 @@ using System.Reflection;
 using NCDO.Extensions;
 using NCDO.Interfaces;
 using JsonPair = System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>;
-using JsonPairEnumerable = System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>>;
+using JsonPairEnumerable =
+    System.Collections.Generic.IEnumerable<System.Collections.Generic.KeyValuePair<string, System.Json.JsonValue>>;
 
 namespace NCDO.CDOMemory
 {
@@ -21,6 +22,7 @@ namespace NCDO.CDOMemory
         private static string _primaryKey = "";
 
         #region Constructor
+
         public CDO_Record(params JsonPair[] items) : this()
         {
             AddRange(items);
@@ -58,12 +60,13 @@ namespace NCDO.CDOMemory
                                 ? Nullable.GetUnderlyingType(propertyInfo.PropertyType)
                                 : propertyInfo.PropertyType;
                             propertyInfo.SetValue(Defaults,
-                            defaultValueAttribute.Value != null
-                                ? Convert.ChangeType(defaultValueAttribute.Value, targetType)
-                                : defaultValueAttribute.Value);
+                                defaultValueAttribute.Value != null
+                                    ? Convert.ChangeType(defaultValueAttribute.Value, targetType)
+                                    : defaultValueAttribute.Value);
                         }
 
-                        if (string.IsNullOrEmpty(_primaryKey) && propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
+                        if (string.IsNullOrEmpty(_primaryKey) &&
+                            propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
                         {
                             _primaryKey = propertyInfo.Name;
                         }
@@ -71,20 +74,27 @@ namespace NCDO.CDOMemory
                 }
             }
 
-            foreach (var keyValuePair in Defaults) { Add(keyValuePair.Key, keyValuePair.Value, false); }
+            foreach (var keyValuePair in Defaults)
+            {
+                Add(keyValuePair.Key, keyValuePair.Value, false);
+            }
         }
+
         public virtual S Default<S>(Expression<Func<T, S>> propertyExpression)
         {
             var property = propertyExpression.Body as UnaryExpression;
-            MemberExpression propExp = (property?.Operand as MemberExpression) ?? propertyExpression.Body as MemberExpression;
+            MemberExpression propExp =
+                (property?.Operand as MemberExpression) ?? propertyExpression.Body as MemberExpression;
             var defaultValueAttribute = propExp?.Member.GetCustomAttribute<DefaultValueAttribute>();
 
             var converter = TypeDescriptor.GetConverter(typeof(S));
-            return (S)converter.ConvertFromString(defaultValueAttribute?.Value.ToString());
+            return (S) converter.ConvertFromString(defaultValueAttribute?.Value.ToString());
         }
 
         #region Overrides of CDO_Record
+
         private object _pkValue = null; //default PK value ~ performance CRUD
+
         /// <inheritdoc />
         public override string GetId()
         {
@@ -112,6 +122,7 @@ namespace NCDO.CDOMemory
     public class CDO_Record : JsonObject, ICloudDataRecord, IEquatable<CDO_Record>
     {
         internal Dictionary<string, JsonValue> _changeDict = new Dictionary<string, JsonValue>();
+
         /// <summary>
         ///     An internal field for the CDO that is provided to find a given record in its memory.
         /// </summary>
@@ -123,6 +134,7 @@ namespace NCDO.CDOMemory
         protected internal string primaryKey = "";
 
         #region Constructor
+
         public CDO_Record(params JsonPair[] items) : base(items)
         {
         }
@@ -173,6 +185,7 @@ namespace NCDO.CDOMemory
             {
                 this[keyValuePair.Key] = keyValuePair.Value;
             }
+
             _changeDict.Clear();
         }
 
@@ -182,6 +195,7 @@ namespace NCDO.CDOMemory
         #endregion
 
         #region Implementation of INotifyPropertyChang(ing|ed)
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged(string propertyName)
@@ -191,6 +205,7 @@ namespace NCDO.CDOMemory
 
         /// <inheritdoc />
         public event PropertyChangingEventHandler PropertyChanging;
+
         protected virtual void OnPropertyChanging(string propertyName)
         {
             PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyName));
@@ -204,8 +219,10 @@ namespace NCDO.CDOMemory
 
             if (notify && ContainsKey(key))
             {
-                OnPropertyChanging(key); base.Remove(key);
+                OnPropertyChanging(key);
+                base.Remove(key);
             }
+
             base[key] = value;
             if (notify && IsPropertyChanged(key)) OnPropertyChanged(key);
         }
@@ -220,7 +237,11 @@ namespace NCDO.CDOMemory
 
         public new JsonValue this[string key]
         {
-            get => base[key];
+            get
+            {
+                if (!ContainsKey(key)) base[key] = null;
+                return base[key];
+            }
             set
             {
                 if (ContainsKey(key)) OnPropertyChanging(key);
@@ -241,6 +262,7 @@ namespace NCDO.CDOMemory
 
         /// <inheritdoc />
         public bool IsChanged => _changeDict.Count > 0;
+
         #endregion
 
         #region Equality members
@@ -256,7 +278,7 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public override bool Equals(object obj)
         {
-            return Equals((CDO_Record)obj);
+            return Equals((CDO_Record) obj);
         }
 
         /// <inheritdoc />
