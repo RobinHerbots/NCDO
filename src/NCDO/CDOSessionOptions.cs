@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using NCDO.Definitions;
 
@@ -52,51 +53,6 @@ namespace NCDO
                         return AuthenticationModel.ToString();
                 }
             }
-        }
-
-        /// <summary>
-        /// The token passed can be overruled by strictly setting the token in the options
-        /// </summary>
-        private string _token;
-        private TokenCache _tokenCache = new TokenCache();
-        /// <summary>
-        /// Returns the token to pass in the headers for the given challenge
-        /// </summary>
-        public string ChallengeToken
-        {
-            get
-            {
-                if (_token == null)
-                {
-                    switch (AuthenticationModel)
-                    {
-                        case AuthenticationModel.Basic:
-                            if (ClientId == null) throw new ArgumentNullException(nameof(ClientId));
-                            if (ClientSecret == null) throw new ArgumentNullException(nameof(ClientSecret));
-                            return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{ClientId}:{ClientSecret}"));
-                        case AuthenticationModel.Bearer:
-                            if (ClientId == null) throw new ArgumentNullException(nameof(ClientId));
-                            if (ClientSecret == null) throw new ArgumentNullException(nameof(ClientSecret));
-                            if (Authority == null) throw new ArgumentNullException(nameof(Authority));
-                            if (Audience == null) throw new ArgumentNullException(nameof(Audience));
-                            var authContext = new AuthenticationContext(Authority, _tokenCache);
-                            var clientCredential = new ClientCredential(ClientId, ClientSecret);
-                            var tokenResult = authContext.AcquireTokenAsync(Audience, clientCredential).Result;
-                            return tokenResult.AccessToken;
-                        case AuthenticationModel.Bearer_WIA:
-                            if (ClientId == null) throw new ArgumentNullException(nameof(ClientId));
-                            if (Authority == null) throw new ArgumentNullException(nameof(Authority));
-                            if (Audience == null) throw new ArgumentNullException(nameof(Audience));
-                            var authContext2 = new AuthenticationContext(Authority, _tokenCache);
-                            var userCredential = new UserCredential();
-                            var tokenResult2 = authContext2.AcquireTokenAsync(Audience, ClientId, userCredential).Result;
-                            return tokenResult2.AccessToken;
-                    }
-                }
-
-                return _token;
-            }
-            protected set => _token = value;
         }
 
         /// <summary>

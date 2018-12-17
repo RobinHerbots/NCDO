@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Json;
 using System.Linq;
 using System.Linq.Expressions;
@@ -15,6 +16,7 @@ using NCDO.Events;
 using NCDO.Extensions;
 using NCDO.Interfaces;
 using NCDO.Properties;
+using Newtonsoft.Json;
 
 namespace NCDO
 {
@@ -306,7 +308,7 @@ namespace NCDO
 
             BeforeInvoke?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
-            await DoRequest(cDORequest, ProcessResponse, cancellationToken);
+            await DoRequest(cDORequest, cancellationToken);
             AfterInvoke?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
 
@@ -346,7 +348,7 @@ namespace NCDO
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             BeforeRead?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
-            await DoRequest(cDORequest, ProcessResponse, cancellationToken);
+            await DoRequest(cDORequest, cancellationToken);
             AfterFill?.Invoke(this,
                 new CDOEventArgs<T, D, R> { CDO = this, Request = cDORequest, Session = _cDOSession });
             AfterRead?.Invoke(this,
@@ -420,7 +422,7 @@ namespace NCDO
                         };
                         BeforeDelete?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
-                        await DoRequest(deleteRequest, ProcessResponse, cancellationToken);
+                        await DoRequest(deleteRequest, cancellationToken);
                         AfterDelete?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = deleteRequest, Session = _cDOSession });
                     }
@@ -442,7 +444,7 @@ namespace NCDO
                         };
                         BeforeCreate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
-                        await DoRequest(createRequest, ProcessResponse, cancellationToken);
+                        await DoRequest(createRequest, cancellationToken);
                         AfterCreate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = createRequest, Session = _cDOSession });
                     }
@@ -464,7 +466,7 @@ namespace NCDO
                         };
                         BeforeUpdate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
-                        await DoRequest(updateRequest, ProcessResponse, cancellationToken);
+                        await DoRequest(updateRequest, cancellationToken);
                         AfterUpdate?.Invoke(this,
                             new CDOEventArgs<T, D, R> { CDO = this, Request = updateRequest, Session = _cDOSession });
                     }
@@ -522,7 +524,7 @@ namespace NCDO
         #endregion
 
         #region Request logic
-        public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, Func<HttpResponseMessage, CDORequest, CancellationToken, Task> processResponse, CancellationToken cancellationToken = default(CancellationToken))
+        public virtual async Task<ICDORequest> DoRequest(CDORequest cDORequest, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
@@ -551,7 +553,7 @@ namespace NCDO
                     using (var response = await _cDOSession.HttpClient.SendAsync(request,
                         HttpCompletionOption.ResponseHeadersRead, cancellationToken))
                     {
-                        await processResponse?.Invoke(response, cDORequest, cancellationToken);
+                        await ProcessResponse(response, cDORequest, cancellationToken);
                     }
                 }
 
@@ -575,16 +577,18 @@ namespace NCDO
             {
                 using (var dataStream = await response.Content.ReadAsStreamAsync())
                 {
-                    if (dataStream != null)
                     {
-                        var parsedResponse = JsonValue.Load(dataStream);
-                        if (parsedResponse != null)
+                        if (dataStream != null)
                         {
-                            request.Response =
-                                (JsonObject)(!string.IsNullOrEmpty(request.FnName) &&
-                                              parsedResponse.ContainsKey("response")
-                                    ? parsedResponse.Get("response")
-                                    : parsedResponse);
+                            var parsedResponse = JsonValue.Load(new StreamReader(dataStream, true));
+                            if (parsedResponse != null)
+                            {
+                                request.Response =
+                                    (JsonObject) (!string.IsNullOrEmpty(request.FnName) &&
+                                                  parsedResponse.ContainsKey("response")
+                                        ? parsedResponse.Get("response")
+                                        : parsedResponse);
+                            }
                         }
                     }
                 }

@@ -20,10 +20,6 @@ namespace NCDO.Interfaces
         /// </summary>
         AuthenticationModel AuthenticationModel { get; }
         /// <summary>
-        /// Returns the authentication token for the given authentication model
-        /// </summary>
-        string ChallengeToken { get; }
-        /// <summary>
         /// Returns the list of URIs used to load the CDO catalogs
         /// to access the Cloud Data Services provided by the
         ///  Mobile or Web application for which the current

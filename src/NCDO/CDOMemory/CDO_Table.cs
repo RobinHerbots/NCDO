@@ -19,8 +19,9 @@ namespace NCDO.CDOMemory
         internal List<T> _changed = new List<T>();
         internal List<T> _deleted = new List<T>();
 
-        public CDO_Table(params T[] items) : this((IEnumerable<T>)items)
-        { }
+        public CDO_Table(params T[] items) : this((IEnumerable<T>) items)
+        {
+        }
 
         public CDO_Table(IEnumerable<T> items)
         {
@@ -34,10 +35,15 @@ namespace NCDO.CDOMemory
         public CDO_Table(IEnumerable<JsonObject> items) : this(items.Select(i =>
         {
             var record = new T();
-            foreach (var keyValuePair in i) { record.Add(keyValuePair.Key, keyValuePair.Value, false); }
+            foreach (var keyValuePair in i)
+            {
+                record.Add(keyValuePair.Key, keyValuePair.Value, false);
+            }
+
             return record;
         }))
-        { }
+        {
+        }
 
         public override JsonType JsonType => JsonType.Array;
 
@@ -59,6 +65,7 @@ namespace NCDO.CDOMemory
         {
             _internalAdd(item, mergeMode, notify);
         }
+
         /// <summary>
         /// Internal Add fn
         /// justAdd to skip contains check ~ performance
@@ -77,7 +84,7 @@ namespace NCDO.CDOMemory
                     item.PropertyChanged -= Item_PropertyChanged;
                     item.PropertyChanged += Item_PropertyChanged;
                     if (notify)
-                        OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] { item });
+                        OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] {item});
                 }
                 else
                 {
@@ -90,13 +97,13 @@ namespace NCDO.CDOMemory
                             throw new CDOException($"Duplicate record with ID {item.GetId()}");
                         case MergeMode.Merge:
                             if (Merge(this[index], item) && notify)
-                                OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { this[index] });
+                                OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] {this[index]});
                             break;
                         case MergeMode.Replace:
                             RemoveAt(index);
                             _list.Add(item);
                             if (notify)
-                                OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] { item }, index);
+                                OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] {item}, index);
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(mergeMode), mergeMode, null);
@@ -146,11 +153,11 @@ namespace NCDO.CDOMemory
             {
                 var ndx = IndexOf(item);
                 _list.RemoveAt(ndx);
-                OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { item });
+                OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] {item});
             }
             else
             {
-                OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] { item });
+                OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] {item});
             }
 
             _list.Insert(index, item);
@@ -200,7 +207,7 @@ namespace NCDO.CDOMemory
             if (stream == null)
                 throw new ArgumentNullException(nameof(stream));
 
-            stream.WriteByte((byte)'[');
+            stream.WriteByte((byte) '[');
 
             for (var i = 0; i < _list.Count; i++)
             {
@@ -211,20 +218,20 @@ namespace NCDO.CDOMemory
                 }
                 else
                 {
-                    stream.WriteByte((byte)'n');
-                    stream.WriteByte((byte)'u');
-                    stream.WriteByte((byte)'l');
-                    stream.WriteByte((byte)'l');
+                    stream.WriteByte((byte) 'n');
+                    stream.WriteByte((byte) 'u');
+                    stream.WriteByte((byte) 'l');
+                    stream.WriteByte((byte) 'l');
                 }
 
                 if (i < Count - 1)
                 {
-                    stream.WriteByte((byte)',');
-                    stream.WriteByte((byte)' ');
+                    stream.WriteByte((byte) ',');
+                    stream.WriteByte((byte) ' ');
                 }
             }
 
-            stream.WriteByte((byte)']');
+            stream.WriteByte((byte) ']');
         }
 
         #region Implementation of INotifyCollectionChanged
@@ -248,21 +255,21 @@ namespace NCDO.CDOMemory
                             {
                                 if (_new.All(r => r.GetId() != item.GetId()))
                                 {
-                                    AddNew(_changed, new[] { item }, DataRowState.Modified);
+                                    AddNew(_changed, new[] {item}, DataRowState.Modified);
                                 }
                             }
                         }
 
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    if (index != -1)
-                        AddNew(_deleted, new[] { _list[index] }, DataRowState.Deleted);
-                    AddNew(_deleted, items, DataRowState.Deleted);
+                    var itemList = index != -1 ? new[] {_list[index]} : items;
+                    itemList = itemList.Where(i => !int.TryParse(i.GetId(), out int id) || id > 0);
+                    AddNew(_deleted, itemList, DataRowState.Deleted);
 
                     break;
                 case NotifyCollectionChangedAction.Replace:
                     AddNew(_changed, items, DataRowState.Modified);
-                    AddNew(_deleted, new[] { _list[index] }, DataRowState.Deleted);
+                    AddNew(_deleted, new[] {_list[index]}, DataRowState.Deleted);
 
                     break;
                 case NotifyCollectionChangedAction.Reset:
@@ -279,7 +286,7 @@ namespace NCDO.CDOMemory
 
         private void OnCollectionChanged(object sender, PropertyChangedEventArgs e)
         {
-            OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] { (T)sender });
+            OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] {(T) sender});
         }
 
         #endregion
@@ -398,6 +405,7 @@ namespace NCDO.CDOMemory
         #endregion
 
         #region Extensions
+
         /// <summary>
         /// When submitting a dataset to the PAS the ID should be unique to be valid for progress.  Negating to mark new records.
         /// </summary>
@@ -450,6 +458,7 @@ namespace NCDO.CDOMemory
 
             return this;
         }
+
         #endregion
     }
 }

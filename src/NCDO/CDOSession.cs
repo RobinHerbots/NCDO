@@ -14,6 +14,7 @@ using NCDO.Catalog;
 using NCDO.Definitions;
 using NCDO.Events;
 using NCDO.Interfaces;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace NCDO
 {
@@ -32,7 +33,7 @@ namespace NCDO
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
-            HttpClient = new HttpClient();
+            HttpClient =   new HttpClient();
             //HttpClient = new HttpClient(new HttpClientHandler() { SslProtocols = _options.SslProtocols });  //this is not supported in older frameworks & problematic in Outlook VSTO
             ServicePointManager.SecurityProtocol = _options.SecurityProtocol;
 
@@ -53,6 +54,44 @@ namespace NCDO
         public HttpClient HttpClient { get; }
 
         private readonly Dictionary<Uri, ICDOCatalog> _catalogs = new Dictionary<Uri, ICDOCatalog>();
+
+
+        private readonly TokenCache _tokenCache = new TokenCache();
+        private AuthenticationContext _authContext;
+
+        /// <summary>
+        /// Internal ~ Returns the token to pass in the headers for the given challenge
+        /// </summary>
+        private async Task<string> GetChallengeToken()
+        {
+            switch (AuthenticationModel)
+            {
+                case AuthenticationModel.Basic:
+                    if (_options.ClientId == null) throw new ArgumentNullException(nameof(_options.ClientId));
+                    if (_options.ClientSecret == null) throw new ArgumentNullException(nameof(_options.ClientSecret));
+                    return Convert.ToBase64String(
+                        Encoding.UTF8.GetBytes($"{_options.ClientId}:{_options.ClientSecret}"));
+                case AuthenticationModel.Bearer:
+                    if (_options.ClientId == null) throw new ArgumentNullException(nameof(_options.ClientId));
+                    if (_options.ClientSecret == null) throw new ArgumentNullException(nameof(_options.ClientSecret));
+                    if (_options.Authority == null) throw new ArgumentNullException(nameof(_options.Authority));
+                    if (_options.Audience == null) throw new ArgumentNullException(nameof(_options.Audience));
+                    _authContext = new AuthenticationContext(_options.Authority, _tokenCache);
+                    var clientCredential = new ClientCredential(_options.ClientId, _options.ClientSecret);
+                    return (await _authContext.AcquireTokenAsync(_options.Audience, clientCredential)).AccessToken;
+                case AuthenticationModel.Bearer_WIA:
+                    if (_options.ClientId == null) throw new ArgumentNullException(nameof(_options.ClientId));
+                    if (_options.Authority == null) throw new ArgumentNullException(nameof(_options.Authority));
+                    if (_options.Audience == null) throw new ArgumentNullException(nameof(_options.Audience));
+                    _authContext = new AuthenticationContext(_options.Authority, _tokenCache);
+                    var userCredential = new UserCredential();
+                    return (await _authContext.AcquireTokenAsync(_options.Audience, _options.ClientId, userCredential))
+                        .AccessToken;
+            }
+
+            return null;
+        }
+
 #pragma warning disable 1998
         public virtual async Task OnOpenRequest(HttpClient client, HttpRequestMessage request)
 #pragma warning restore 1998
@@ -61,7 +100,7 @@ namespace NCDO
             if (AuthenticationModel != AuthenticationModel.Anonymous)
             {
                 request.Headers.Authorization =
-                    new AuthenticationHeaderValue(_options.Challenge, _options.ChallengeToken);
+                    new AuthenticationHeaderValue(_options.Challenge, await GetChallengeToken());
             }
         }
 
@@ -102,7 +141,8 @@ namespace NCDO
             {
                 await PrepareLoginRequest(request, urlBuilder);
                 await OnOpenRequest(HttpClient, request);
-                var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,
+                    cancellationToken);
                 await ProcessLoginResponse(response);
             }
         }
@@ -141,14 +181,14 @@ namespace NCDO
         private void NetworkChange_NetworkAvailabilityChanged(object sender, NetworkAvailabilityEventArgs e)
         {
             if (e.IsAvailable)
-                Online?.Invoke(this, new CDOEventArgs() { Session = this });
-            else Offline?.Invoke(this, new CDOOfflineEventArgs() { Session = this });
+                Online?.Invoke(this, new CDOEventArgs() {Session = this});
+            else Offline?.Invoke(this, new CDOOfflineEventArgs() {Session = this});
         }
+
         public event EventHandler<CDOEventArgs> Online;
         public event EventHandler<CDOOfflineEventArgs> Offline;
 
         public AuthenticationModel AuthenticationModel => _options.AuthenticationModel;
-        public string ChallengeToken => _options.ChallengeToken;
         public ICollection<Uri> CatalogURIs { get; } = new List<Uri>();
         public string ClientContextId { get; set; }
         public ICloudDataObject[] CDOs { get; set; }
@@ -214,6 +254,7 @@ namespace NCDO
         }
 
         private bool _disposed;
+
 
         public void Dispose()
         {
