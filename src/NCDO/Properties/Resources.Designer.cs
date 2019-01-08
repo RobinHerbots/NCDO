@@ -19,7 +19,7 @@ namespace NCDO.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
@@ -66,6 +66,24 @@ namespace NCDO.Properties {
         public static string API_InternalError {
             get {
                 return ResourceManager.GetString("API_InternalError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to No network connection..
+        /// </summary>
+        public static string Session_NoNetwork {
+            get {
+                return ResourceManager.GetString("Session_NoNetwork", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Session is not authorized..
+        /// </summary>
+        public static string Session_NotAuthenticated {
+            get {
+                return ResourceManager.GetString("Session_NotAuthenticated", resourceCulture);
             }
         }
     }

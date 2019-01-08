@@ -120,4 +120,10 @@
   <data name="API_InternalError" xml:space="preserve">
     <value>NCDO, Internal Error: {0}</value>
   </data>
+  <data name="Session_NotAuthenticated" xml:space="preserve">
+    <value>Session is not authorized.</value>
+  </data>
+  <data name="Session_NoNetwork" xml:space="preserve">
+    <value>No network connection.</value>
+  </data>
 </root>

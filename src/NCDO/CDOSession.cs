@@ -147,7 +147,7 @@ namespace NCDO
                     await ProcessLoginResponse(response);
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 //swallow
             }
@@ -159,6 +159,7 @@ namespace NCDO
         public virtual async Task ProcessLoginResponse(HttpResponseMessage response)
 #pragma warning restore 1998
         {
+            Connected = true;
             LoginHttpStatus = response.StatusCode;
         }
 
@@ -178,12 +179,6 @@ namespace NCDO
         {
             ThrowIfDisposed();
             //throw new NotImplementedException(); 
-        }
-
-        public void Ping()
-        {
-            ThrowIfDisposed();
-            throw new NotImplementedException();
         }
 
         private void NetworkChange_NetworkAvailabilityChanged(object sender, NetworkAvailabilityEventArgs e)
@@ -210,7 +205,7 @@ namespace NCDO
         public ICloudDataObject[] CDOs { get; set; }
         public bool Connected { get; private set; } = false;
 
-        public HttpStatusCode LoginHttpStatus { get; private set; } = HttpStatusCode.ServiceUnavailable;
+        public HttpStatusCode LoginHttpStatus { get; private set; } = HttpStatusCode.Ambiguous;
 
         public SessionStatus LoginResult
         {
@@ -227,8 +222,6 @@ namespace NCDO
                 }
             }
         }
-
-        public int PingInterval { get; set; }
 
         public IEnumerable<Service> Services
         {

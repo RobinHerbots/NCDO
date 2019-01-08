@@ -50,10 +50,6 @@ namespace NCDO.Interfaces
         /// </summary>
         SessionStatus LoginResult { get; }
         /// <summary>
-        /// A Number that specifies the duration, in milliseconds, between one automatic execution of the current CDOSession object's ping( ) method and the next.
-        /// </summary>
-        int PingInterval { get; set; }
-        /// <summary>
         /// Identifies the Cloud Data Services that have been loaded for the current CDOSession object and its Mobile or Web application.
         /// </summary>
         IEnumerable<Service> Services { get; }
@@ -104,10 +100,6 @@ namespace NCDO.Interfaces
         /// Terminates the login session on the Mobile or Web application managed by the current CDOSession object, and invalidates any session currently maintained by the server.
         /// </summary>
         Task Logout();
-        /// <summary>
-        /// Determines the online status of the current CDOSession object from its ability to access the Mobile or Web application that it manages.
-        /// </summary>
-        void Ping();
 
         #endregion
         #region Events
