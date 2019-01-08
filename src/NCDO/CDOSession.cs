@@ -41,8 +41,8 @@ namespace NCDO
             HttpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
             HttpClient.DefaultRequestHeaders.Pragma.Add(NameValueHeaderValue.Parse("no-cache"));
             HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-            NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged;
+            Task.Factory.StartNew(() =>
+                NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged).Wait();
         }
 
         #endregion
