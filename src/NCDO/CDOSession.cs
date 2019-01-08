@@ -33,7 +33,7 @@ namespace NCDO
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
-            HttpClient =   new HttpClient();
+            HttpClient = new HttpClient();
             //HttpClient = new HttpClient(new HttpClientHandler() { SslProtocols = _options.SslProtocols });  //this is not supported in older frameworks & problematic in Outlook VSTO
             ServicePointManager.SecurityProtocol = _options.SecurityProtocol;
 
@@ -131,20 +131,28 @@ namespace NCDO
 
         protected virtual string _loginURI { get; } = "/static/home.html";
 
-        public async Task Login(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<SessionStatus> Login(CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-
-            var urlBuilder = new StringBuilder(_options.ServiceUri.AbsoluteUri);
-            using (var request = new HttpRequestMessage())
+            try
             {
-                await PrepareLoginRequest(request, urlBuilder);
-                await OnOpenRequest(HttpClient, request);
-                var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,
-                    cancellationToken);
-                await ProcessLoginResponse(response);
+                var urlBuilder = new StringBuilder(_options.ServiceUri.AbsoluteUri);
+                using (var request = new HttpRequestMessage())
+                {
+                    await PrepareLoginRequest(request, urlBuilder);
+                    await OnOpenRequest(HttpClient, request);
+                    var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,
+                        cancellationToken);
+                    await ProcessLoginResponse(response);
+                }
             }
+            catch (Exception ex)
+            {
+                //swallow
+            }
+
+            return LoginResult;
         }
 
 #pragma warning disable 1998
@@ -180,9 +188,17 @@ namespace NCDO
 
         private void NetworkChange_NetworkAvailabilityChanged(object sender, NetworkAvailabilityEventArgs e)
         {
+            Connected = e.IsAvailable;
             if (e.IsAvailable)
+            {
+                Login().Wait();
                 Online?.Invoke(this, new CDOEventArgs() {Session = this});
-            else Offline?.Invoke(this, new CDOOfflineEventArgs() {Session = this});
+            }
+            else
+            {
+                LoginHttpStatus = HttpStatusCode.ServiceUnavailable;
+                Offline?.Invoke(this, new CDOOfflineEventArgs() {Session = this});
+            }
         }
 
         public event EventHandler<CDOEventArgs> Online;
@@ -192,8 +208,9 @@ namespace NCDO
         public ICollection<Uri> CatalogURIs { get; } = new List<Uri>();
         public string ClientContextId { get; set; }
         public ICloudDataObject[] CDOs { get; set; }
-        public bool Connected => LoginHttpStatus == HttpStatusCode.OK;
-        public HttpStatusCode LoginHttpStatus { get; private set; } = HttpStatusCode.Ambiguous;
+        public bool Connected { get; private set; } = false;
+
+        public HttpStatusCode LoginHttpStatus { get; private set; } = HttpStatusCode.ServiceUnavailable;
 
         public SessionStatus LoginResult
         {
