@@ -151,6 +151,12 @@ namespace NCDO
             {
                 //swallow
             }
+            finally
+            {
+                //remove me when kevin fixes PAS
+                Connected = true;
+                LoginHttpStatus = HttpStatusCode.OK;
+            }
 
             return LoginResult;
         }
