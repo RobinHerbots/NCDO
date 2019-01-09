@@ -214,7 +214,7 @@ namespace NCDO
                 switch (LoginHttpStatus)
                 {
                     case HttpStatusCode.OK:
-                        return SessionStatus.AUHTENTICATION_SUCCESS;
+                        return SessionStatus.AUTHENTICATION_SUCCESS;
                     case HttpStatusCode.Unauthorized:
                         return SessionStatus.AUTHENTICATION_FAILURE;
                     default:
@@ -277,7 +277,7 @@ namespace NCDO
             if (!disposing || this._disposed)
                 return;
 
-            HttpClient?.Dispose();
+//            HttpClient?.Dispose(); //https://aspnetmonsters.com/2016/08/2016-08-27-httpclientwrong/
             _disposed = true;
         }
 

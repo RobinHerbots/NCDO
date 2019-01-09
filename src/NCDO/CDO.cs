@@ -538,7 +538,7 @@ namespace NCDO
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
-            if (_cDOSession.LoginResult != SessionStatus.AUHTENTICATION_SUCCESS)
+            if (_cDOSession.LoginResult != SessionStatus.AUTHENTICATION_SUCCESS)
                 throw new CDOException(_cDOSession.LoginResult.ToString(),
                     _cDOSession.Connected ? Resources.Session_NotAuthenticated : Resources.Session_NoNetwork);
 
