@@ -2,6 +2,7 @@ namespace NCDO.Catalog
 {
     public enum ParamType
     {
+        Ambiguous,
         Path,
         Query,
         RequestBody,

@@ -6,23 +6,36 @@ namespace NCDO.Catalog
 {
     public class Schema
     {
+        private readonly JsonValue _schema;
+        private Dictionary<string, DataDefinition> _properties;
+
         public Schema(JsonValue schema)
         {
-            Type = schema.Get("type");
-            AdditionalProperties = schema.Get("additionalProperties");
-            if (schema.ContainsKey("properties"))
-            {
-                Properties = new Dictionary<string, DataDefinition>();
-                JsonObject schemaProperties = (JsonObject)schema.Get("properties");
-                foreach (var key in schemaProperties.Keys)
-                {
-                    Properties.Add(key, new DataDefinition(schemaProperties[key]));
-                }
-            }
+            _schema = schema;
         }
 
-        public string Type { get; }
-        public bool AdditionalProperties { get; }
-        public Dictionary<string, DataDefinition> Properties { get; }
+        public string Type => _schema.Get("type");
+        public bool AdditionalProperties => _schema.Get("additionalProperties");
+
+        public Dictionary<string, DataDefinition> Properties
+        {
+            get
+            {
+                if (_properties == null)
+                {
+                    _properties = new Dictionary<string, DataDefinition>();
+                    if (_schema.ContainsKey("properties"))
+                    {
+                        JsonObject schemaProperties = (JsonObject) _schema.Get("properties");
+                        foreach (var key in schemaProperties.Keys)
+                        {
+                            _properties.Add(key, new DataDefinition(schemaProperties[key]));
+                        }
+                    }
+                }
+
+                return _properties;
+            }
+        }
     }
 }

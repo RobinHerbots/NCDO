@@ -680,7 +680,7 @@ namespace NCDO
 
         private void DetermineMainTable()
         {
-            _mainTable = _resourceDefinition.Relations != null
+            _mainTable = _resourceDefinition.Relations != null && _resourceDefinition.Relations.Count > 0
                 ? _resourceDefinition.Relations.FirstOrDefault().ParentName
                 : _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties.FirstOrDefault().Key;
             _primaryKey = _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties[_mainTable]

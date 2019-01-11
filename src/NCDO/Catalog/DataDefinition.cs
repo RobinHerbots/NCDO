@@ -6,23 +6,36 @@ namespace NCDO.Catalog
 {
     public class DataDefinition
     {
+        private JsonValue _dataDefinition;
+        private Dictionary<string, TableDefinition> _properties;
+
         public DataDefinition(JsonValue dataDefinition)
         {
-            Type = dataDefinition.Get("type");
-            AdditionalProperties = dataDefinition.Get("additionalProperties");
-            if (dataDefinition.ContainsKey("properties"))
-            {
-                Properties = new Dictionary<string, TableDefinition>();
-                JsonObject pdProperties = (JsonObject)dataDefinition.Get("properties");
-                foreach (var key in pdProperties.Keys)
-                {
-                    Properties.Add(key ,new TableDefinition(pdProperties[key]));
-                }
-            }
+            _dataDefinition = dataDefinition;
         }
 
-        public string Type { get; }
-        public bool AdditionalProperties { get; }
-        public Dictionary<string, TableDefinition> Properties { get; }
+        public string Type => _dataDefinition.Get("type");
+        public bool AdditionalProperties => _dataDefinition.Get("additionalProperties");
+
+        public Dictionary<string, TableDefinition> Properties
+        {
+            get
+            {
+                if (_properties == null)
+                {
+                    _properties = new Dictionary<string, TableDefinition>();
+                    if (_dataDefinition.ContainsKey("properties"))
+                    {
+                        JsonObject pdProperties = (JsonObject) _dataDefinition.Get("properties");
+                        foreach (var key in pdProperties.Keys)
+                        {
+                            _properties.Add(key, new TableDefinition(pdProperties[key]));
+                        }
+                    }
+                }
+
+                return _properties;
+            }
+        }
     }
 }

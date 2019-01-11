@@ -6,32 +6,59 @@ namespace NCDO.Catalog
 {
     public class TableDefinition
     {
+        private JsonValue _tableDefinition;
+        private List<string> _primaryKey;
+        private Dictionary<string, IPropertyDefinition> _properties;
+
         public TableDefinition(JsonValue tableDefinition)
         {
-            Type = tableDefinition.Get("type");
-            var primaryKeyValue = tableDefinition.Get("primaryKey");
-            if (primaryKeyValue.JsonType == JsonType.String)
-                PrimaryKey.Add("ID");
-            else
+            _tableDefinition = tableDefinition;
+        }
+
+        public string Type => _tableDefinition.Get("type");
+
+        public List<string> PrimaryKey
+        {
+            get
             {
-                foreach (var jsonValue in (JsonArray)primaryKeyValue)
+                if (_primaryKey == null)
                 {
-                    PrimaryKey.Add((string)jsonValue);
+                    _primaryKey = new List<string>();
+                    var primaryKeyValue = _tableDefinition.Get("primaryKey");
+                    if (primaryKeyValue.JsonType == JsonType.String)
+                        _primaryKey.Add("ID");
+                    else
+                    {
+                        foreach (var jsonValue in (JsonArray) primaryKeyValue)
+                        {
+                            _primaryKey.Add((string) jsonValue);
+                        }
+                    }
                 }
-            }
-            if (tableDefinition.ContainsKey("items"))
-            {
-                Properties = new Dictionary<string, IPropertyDefinition>();
-                JsonObject pdProperties = (JsonObject)tableDefinition.Get("items")?.Get("properties");
-                foreach (var key in pdProperties.Keys)
-                {
-                    Properties.Add(key, new PropertyDefinition(pdProperties[key]));
-                }
+
+                return _primaryKey;
             }
         }
 
-        public string Type { get; }
-        public List<string> PrimaryKey { get; } = new List<string>();
-        public Dictionary<string, IPropertyDefinition> Properties { get; }
+        public Dictionary<string, IPropertyDefinition> Properties
+        {
+            get
+            {
+                if (_properties == null)
+                {
+                    _properties = new Dictionary<string, IPropertyDefinition>();
+                    if (_tableDefinition.ContainsKey("items"))
+                    {
+                        JsonObject pdProperties = (JsonObject) _tableDefinition.Get("items")?.Get("properties");
+                        foreach (var key in pdProperties.Keys)
+                        {
+                            _properties.Add(key, new PropertyDefinition(pdProperties[key]));
+                        }
+                    }
+                }
+
+                return _properties;
+            }
+        }
     }
 }
