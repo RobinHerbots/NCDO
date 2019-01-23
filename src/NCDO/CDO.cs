@@ -4,6 +4,7 @@ using System.IO;
 using System.Json;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Text;
@@ -339,7 +340,7 @@ namespace NCDO
             //setup filter for get request
             var filterpath = string.IsNullOrEmpty(filter)
                 ? ""
-                : operationDefinition.Path.ToString().Replace("{filter}", filter);
+                : operationDefinition.Path.ToString().Replace("{filter}", WebUtility.UrlEncode(filter));
 
             //init request if needed
             var cDORequest = new CDORequest
