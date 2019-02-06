@@ -22,6 +22,7 @@ module.exports = function (grunt) {
                     buildParameters: {
                         OutputPath: process.cwd() + sep + "build",
                         WarningLevel: 2,
+                        PackageVersion: '<%= pkg.version %>',
                         FileVersion: '<%= pkg.version %>',
                         Version: '<%= pkg.version %>',
                         AssemblyVersion: '<%= pkg.version %>'

@@ -61,6 +61,14 @@ namespace NCDO.Catalog
         /// <inheritdoc />
         public string Format => _propertyDefinition.Get("format");
 
+        /// <summary>
+        /// Optional for Field with type “array”.
+        ///<ExtentValue> is an integer value specifying number of array elements.
+        /// </summary>
+        public int MaxItems => _propertyDefinition.Get("maxItems");
+
+        public JsonValue Items => _propertyDefinition.Get("items");
+
         #endregion
     }
 }
