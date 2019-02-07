@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Json;
+using System.Linq;
 
 namespace NCDO.Extensions
 {
@@ -14,6 +17,24 @@ namespace NCDO.Extensions
         public static JsonValue Get(this JsonValue jsonValue, string key)
         {
             return jsonValue.ContainsKey(key) ? jsonValue[key] : new JsonPrimitive((string) null);
+        }
+
+        public static T[] ToArray<T>(this JsonValue jsonValue) where T : new()
+        {
+            if (jsonValue is JsonArray jsonArray)
+            {
+                return jsonArray.Cast<T>().ToArray();
+            }
+
+            return null;
+        }
+
+        public static void AddRange<T>(this JsonValue jsonValue, IEnumerable<T> arrObj)
+        {
+            if (jsonValue is JsonArray jsonArray)
+            {
+                jsonArray.AddRange(arrObj.Cast<object>().Select(i => (JsonPrimitive) i));
+            }
         }
 
         internal static void Set(this JsonValue jsonValue, string key, JsonValue value)
