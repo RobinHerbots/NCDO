@@ -28,7 +28,17 @@ namespace NCDO.Extensions
 
             return null;
         }
+        
+        public static string[] ToArray(this JsonValue jsonValue)
+        {
+            if (jsonValue is JsonArray jsonArray)
+            {
+                return jsonArray.Cast<string>().ToArray();
+            }
 
+            return null;
+        }
+        
         public static void AddRange<T>(this JsonValue jsonValue, IEnumerable<T> arrObj)
         {
             if (jsonValue is JsonArray jsonArray)
