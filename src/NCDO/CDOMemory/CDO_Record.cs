@@ -268,7 +268,7 @@ namespace NCDO.CDOMemory
         {
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
-            return string.Equals(GetId(), other.Get(GetId()));
+            return string.Equals(GetId(), other.GetId());
         }
 
         /// <inheritdoc />
