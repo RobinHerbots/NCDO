@@ -100,7 +100,9 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public override string GetId()
         {
-            return string.IsNullOrEmpty(primaryKey) ? _id : this.Get(primaryKey).AsString();
+            if (string.IsNullOrEmpty(primaryKey))
+                return _id;
+            return Defaults.Get(primaryKey) == this.Get(primaryKey) ? _id : this.Get(primaryKey).AsString();
         }
 
         #endregion
