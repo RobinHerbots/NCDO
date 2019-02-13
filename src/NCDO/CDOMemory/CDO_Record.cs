@@ -102,7 +102,7 @@ namespace NCDO.CDOMemory
         {
             if (string.IsNullOrEmpty(primaryKey))
                 return _id;
-            return Defaults.Get(primaryKey) == this.Get(primaryKey) ? _id : this.Get(primaryKey).AsString();
+            return Defaults.Get(primaryKey).AsString() == this.Get(primaryKey).AsString() ? _id : this.Get(primaryKey).AsString();
         }
 
         #endregion

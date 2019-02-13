@@ -262,18 +262,38 @@ namespace NCDO.CDOMemory
 
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    var itemList = index != -1 ? new[] {_list[index]} : items;
-                    itemList = itemList.Where(i => !int.TryParse(i.GetId(), out int id) || id > 0);
-                    AddNew(_deleted, itemList, DataRowState.Deleted);
+                    var removeList = index != -1 ? new[] {_list[index]} : items;
+                    removeList = removeList.Where(i =>
+                    {
+                        if (!int.TryParse(i.GetId(), out int id)) id = -1;
+                        return id >= 0;
+                    });
+                    AddNew(_deleted, removeList, DataRowState.Deleted);
 
                     break;
                 case NotifyCollectionChangedAction.Replace:
-                    AddNew(_changed, items, DataRowState.Modified);
-                    AddNew(_deleted, new[] {_list[index]}, DataRowState.Deleted);
+                    var replaceList = items;
+                    int ndx = 0;
+                    replaceList = replaceList.Where(i =>
+                    {
+                        if (!int.TryParse(i.GetId(), out ndx)) ndx = -1;
+                        return ndx >= 0;
+                    });
+                    AddNew(_changed, replaceList, DataRowState.Modified);
+
+                    if (!int.TryParse(_list[index].GetId(), out ndx)) ndx = -1;
+                    if (ndx >= 0)
+                        AddNew(_deleted, new[] {_list[index]}, DataRowState.Deleted);
 
                     break;
                 case NotifyCollectionChangedAction.Reset:
-                    AddNew(_deleted, items, DataRowState.Deleted);
+                    var resetList = items;
+                    resetList = resetList.Where(i =>
+                    {
+                        if (!int.TryParse(i.GetId(), out int rndx)) rndx = -1;
+                        return rndx >= 0;
+                    });
+                    AddNew(_deleted, resetList, DataRowState.Deleted);
 
                     break;
                 default:
