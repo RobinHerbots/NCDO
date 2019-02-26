@@ -47,6 +47,7 @@ namespace NCDO
             {
                 switch (AuthenticationModel)
                 {
+                    case AuthenticationModel.Bearer_OnBehalf:
                     case AuthenticationModel.Bearer_WIA:
                         return AuthenticationModel.Bearer.ToString();
                     default:
@@ -55,6 +56,18 @@ namespace NCDO
             }
         }
 
+
+        #region Bearer_onbehalf
+        /// <summary>
+        /// Function call to retrieve the User bearertoken
+        /// </summary>
+        public Func<string> UserAccessToken { get; set; }
+        /// <summary>
+        /// Function call to retrieve the current user
+        /// </summary>
+        public Func<string> UserName { get; set; }
+        #endregion
+        
         /// <summary>
         /// Specify SslProtocols required
         /// Ex: Tls12 | Tls11 | Tls

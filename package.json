@@ -6,7 +6,7 @@
   "dependencies": {},
   "devDependencies": {
     "grunt": "^1.0.3",
-    "grunt-available-tasks": "^0.6.3",
+    "grunt-available-tasks": "git://github.com/RobinHerbots/grunt-available-tasks.git",
     "grunt-bump": "^0.8.0",
     "grunt-cli": "^1.3.2",
     "grunt-contrib-clean": "^2.0.0",

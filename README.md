@@ -1,5 +1,5 @@
 # NCDO
-Copyright (c) 2017 - 2018 Robin Herbots Licensed under the MIT license (http://opensource.org/licenses/mit-license.php)  
+Copyright (c) 2017 - 2019 Robin Herbots Licensed under the MIT license (http://opensource.org/licenses/mit-license.php)  
   
 [![donate](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=LXZNPVLB4P7GU)
   
@@ -38,13 +38,37 @@ Supported protocols:
 - basic
 - bearer
 - bearer_WIA (Azure authentication through Windows Integrated Authentication)
-
-### Remarks
-
-Any contributions (code, documentation) is also welcome. 
+- bearer_OnBehalf (Azure authentication onbehalf flow)
 
 #### bearer_WIA
 Windows Integrated Authentication needs to be enabled in AAD (Seamless single sign-on).
+
+#### bearer_OnBehalf
+
+The options UserAccessToken and UserName are of type Func<string>, allowing to dynamically call fot the current accesstoken and username.
+```
+  var pdSession = new CDOSession(new CDOSessionOptions() { 
+        ServiceUri = new Uri("http://<pas server url>")
+        AuthenticationModel = AuthenticationModel.Bearer_OnBehalf,
+        Authority = "https://login.microsoftonline.com/<tenantId>",
+        ClientId = <ClientId of the authenticated app>,
+        ClientSecret = <ClientSecret of the authenticated app>,
+        Audience = <ClientId of the target app/resource>,
+        UserAccessToken = () => HttpContext.GetTokenAsync("id_token").Result, //function to retrieve the current accesstoken
+        UserName = () => User.Identity.Name //function to retrieve the current username
+  
+  });
+  pdSession.Login().Wait();
+  pdSession.AddCatalog(new Uri("http://<catalog url>")).Wait();
+            
+  var cdo = new CDO("resource");
+  var paramObj = new JsonObject
+       {
+          { "name", "name" },
+       };
+  
+  var resp = cdo.Invoke("InvokeOperation", paramObj).Result;
+```
 
 #### Additions to api spec
 
@@ -60,3 +84,8 @@ Windows Integrated Authentication needs to be enabled in AAD (Seamless single si
 
 - CDOSession.ChallengeToken
     Returns the authentication token for the given authentication model
+    
+    
+### Remarks
+    
+Any contributions (code, documentation) is also welcome. 

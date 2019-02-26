@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.NetworkInformation;
 using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -72,13 +73,22 @@ namespace NCDO
                     return Convert.ToBase64String(
                         Encoding.UTF8.GetBytes($"{_options.ClientId}:{_options.ClientSecret}"));
                 case AuthenticationModel.Bearer:
+                case AuthenticationModel.Bearer_OnBehalf:
                     if (_options.ClientId == null) throw new ArgumentNullException(nameof(_options.ClientId));
                     if (_options.ClientSecret == null) throw new ArgumentNullException(nameof(_options.ClientSecret));
                     if (_options.Authority == null) throw new ArgumentNullException(nameof(_options.Authority));
                     if (_options.Audience == null) throw new ArgumentNullException(nameof(_options.Audience));
                     _authContext = new AuthenticationContext(_options.Authority, _tokenCache);
                     var clientCredential = new ClientCredential(_options.ClientId, _options.ClientSecret);
+
+                    if(AuthenticationModel == AuthenticationModel.Bearer)
                     return (await _authContext.AcquireTokenAsync(_options.Audience, clientCredential)).AccessToken;
+                    else
+                    {
+                        UserAssertion userAssertion = new UserAssertion(_options.UserAccessToken.Invoke(),
+                            "urn:ietf:params:oauth:grant-type:jwt-bearer", _options.UserName.Invoke());
+                        return (await _authContext.AcquireTokenAsync(_options.Audience, clientCredential,userAssertion)).AccessToken;
+                    }
                 case AuthenticationModel.Bearer_WIA:
                     if (_options.ClientId == null) throw new ArgumentNullException(nameof(_options.ClientId));
                     if (_options.Authority == null) throw new ArgumentNullException(nameof(_options.Authority));
@@ -151,7 +161,7 @@ namespace NCDO
             {
                 //swallow
             }
-         
+
             return LoginResult;
         }
 

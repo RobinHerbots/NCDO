@@ -43,7 +43,7 @@ module.exports = function (grunt) {
                 options: {
                     filter: 'exclude',
                     tasks: ['availabletasks', 'default'],
-                    showTasks: ['user']
+                    groups: "bytype"
                 }
             }
         }
