@@ -24,19 +24,17 @@ namespace NCDO
     /// </summary>
     public partial class CDOSession : ICDOSession
     {
-        private readonly CDOSessionOptions _options;
-
         #region Constructor
 
         public CDOSession(CDOSessionOptions options)
         {
-            _options = options;
+            Options = options;
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
             HttpClient = new HttpClient();
             //HttpClient = new HttpClient(new HttpClientHandler() { SslProtocols = _options.SslProtocols });  //this is not supported in older frameworks & problematic in Outlook VSTO
-            ServicePointManager.SecurityProtocol = _options.SecurityProtocol;
+            ServicePointManager.SecurityProtocol = Options.SecurityProtocol;
 
             HttpClient.DefaultRequestHeaders.ConnectionClose = false;
             HttpClient.DefaultRequestHeaders.CacheControl = CacheControlHeaderValue.Parse("no-cache");
@@ -48,10 +46,11 @@ namespace NCDO
 
         #endregion
 
+        public CDOSessionOptions Options { get; private set; }
         /// <inheritdoc />
-        public Uri ServiceURI => _options.ServiceUri;
+        public Uri ServiceURI => Options.ServiceUri;
 
-        public string UserName => _options.ClientId;
+        public string UserName => Options.ClientId;
         public HttpClient HttpClient { get; }
 
         private readonly Dictionary<Uri, ICDOCatalog> _catalogs = new Dictionary<Uri, ICDOCatalog>();
@@ -68,34 +67,34 @@ namespace NCDO
             switch (AuthenticationModel)
             {
                 case AuthenticationModel.Basic:
-                    if (_options.ClientId == null) throw new ArgumentNullException(nameof(_options.ClientId));
-                    if (_options.ClientSecret == null) throw new ArgumentNullException(nameof(_options.ClientSecret));
+                    if (Options.ClientId == null) throw new ArgumentNullException(nameof(Options.ClientId));
+                    if (Options.ClientSecret == null) throw new ArgumentNullException(nameof(Options.ClientSecret));
                     return Convert.ToBase64String(
-                        Encoding.UTF8.GetBytes($"{_options.ClientId}:{_options.ClientSecret}"));
+                        Encoding.UTF8.GetBytes($"{Options.ClientId}:{Options.ClientSecret}"));
                 case AuthenticationModel.Bearer:
                 case AuthenticationModel.Bearer_OnBehalf:
-                    if (_options.ClientId == null) throw new ArgumentNullException(nameof(_options.ClientId));
-                    if (_options.ClientSecret == null) throw new ArgumentNullException(nameof(_options.ClientSecret));
-                    if (_options.Authority == null) throw new ArgumentNullException(nameof(_options.Authority));
-                    if (_options.Audience == null) throw new ArgumentNullException(nameof(_options.Audience));
-                    _authContext = new AuthenticationContext(_options.Authority, _tokenCache);
-                    var clientCredential = new ClientCredential(_options.ClientId, _options.ClientSecret);
+                    if (Options.ClientId == null) throw new ArgumentNullException(nameof(Options.ClientId));
+                    if (Options.ClientSecret == null) throw new ArgumentNullException(nameof(Options.ClientSecret));
+                    if (Options.Authority == null) throw new ArgumentNullException(nameof(Options.Authority));
+                    if (Options.Audience == null) throw new ArgumentNullException(nameof(Options.Audience));
+                    _authContext = new AuthenticationContext(Options.Authority, _tokenCache);
+                    var clientCredential = new ClientCredential(Options.ClientId, Options.ClientSecret);
 
                     if(AuthenticationModel == AuthenticationModel.Bearer)
-                    return (await _authContext.AcquireTokenAsync(_options.Audience, clientCredential)).AccessToken;
+                    return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential)).AccessToken;
                     else
                     {
-                        UserAssertion userAssertion = new UserAssertion(_options.UserAccessToken.Invoke(),
-                            "urn:ietf:params:oauth:grant-type:jwt-bearer", _options.UserName.Invoke());
-                        return (await _authContext.AcquireTokenAsync(_options.Audience, clientCredential,userAssertion)).AccessToken;
+                        UserAssertion userAssertion = new UserAssertion(Options.UserAccessToken.Invoke(),
+                            "urn:ietf:params:oauth:grant-type:jwt-bearer", Options.UserName.Invoke());
+                        return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential,userAssertion)).AccessToken;
                     }
                 case AuthenticationModel.Bearer_WIA:
-                    if (_options.ClientId == null) throw new ArgumentNullException(nameof(_options.ClientId));
-                    if (_options.Authority == null) throw new ArgumentNullException(nameof(_options.Authority));
-                    if (_options.Audience == null) throw new ArgumentNullException(nameof(_options.Audience));
-                    _authContext = new AuthenticationContext(_options.Authority, _tokenCache);
+                    if (Options.ClientId == null) throw new ArgumentNullException(nameof(Options.ClientId));
+                    if (Options.Authority == null) throw new ArgumentNullException(nameof(Options.Authority));
+                    if (Options.Audience == null) throw new ArgumentNullException(nameof(Options.Audience));
+                    _authContext = new AuthenticationContext(Options.Authority, _tokenCache);
                     var userCredential = new UserCredential();
-                    return (await _authContext.AcquireTokenAsync(_options.Audience, _options.ClientId, userCredential))
+                    return (await _authContext.AcquireTokenAsync(Options.Audience, Options.ClientId, userCredential))
                         .AccessToken;
             }
 
@@ -110,7 +109,7 @@ namespace NCDO
             if (AuthenticationModel != AuthenticationModel.Anonymous)
             {
                 request.Headers.Authorization =
-                    new AuthenticationHeaderValue(_options.Challenge, await GetChallengeToken());
+                    new AuthenticationHeaderValue(Options.Challenge, await GetChallengeToken());
             }
         }
 
@@ -147,7 +146,7 @@ namespace NCDO
             ThrowIfDisposed();
             try
             {
-                var urlBuilder = new StringBuilder(_options.ServiceUri.AbsoluteUri);
+                var urlBuilder = new StringBuilder(Options.ServiceUri.AbsoluteUri);
                 using (var request = new HttpRequestMessage())
                 {
                     await PrepareLoginRequest(request, urlBuilder);
@@ -209,7 +208,7 @@ namespace NCDO
         public event EventHandler<CDOEventArgs> Online;
         public event EventHandler<CDOOfflineEventArgs> Offline;
 
-        public AuthenticationModel AuthenticationModel => _options.AuthenticationModel;
+        public AuthenticationModel AuthenticationModel => Options.AuthenticationModel;
         public ICollection<Uri> CatalogURIs { get; } = new List<Uri>();
         public string ClientContextId { get; set; }
         public ICloudDataObject[] CDOs { get; set; }
