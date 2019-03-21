@@ -70,6 +70,49 @@ The options UserAccessToken and UserName are of type Func<string>, allowing to d
   var resp = cdo.Invoke("InvokeOperation", paramObj).Result;
 ```
 
+###### ASP.NET Core / MVC
+
+####### appsettings.json
+
+```
+...
+ "NCDOServiceClientOptions": {
+    "ServiceUri": "http://<catalog url>",
+    "AuthenticationModel": "Bearer_OnBehalf",
+    "Authority": "https://login.microsoftonline.com/<tenant>",
+    "ClientId": <clientId>,
+    "ClientSecret": <clientSecret>,
+    "Audience": <audience>
+  },
+...
+```
+
+####### Startup
+
+```
+   public void ConfigureServices(IServiceCollection services)
+   {
+            ...
+            services.Configure<NCDOServiceClientOptions>(Configuration.GetSection("NCDOServiceClientOptions"));
+            var options = services.BuildServiceProvider().GetService<IOptions<NCDOServiceClientOptions>>().Value;
+            services.AddSingleton(options);
+            services.AddSingleton<NCDOServiceClient>();
+            ...
+   }
+```
+
+####### Controller
+    
+```
+...
+  public override void OnActionExecuting(ActionExecutingContext context)
+  {
+      _ncdoServiceClient.Options.UserName = () => User.Identity.Name;
+      _ncdoServiceClient.Options.UserAccessToken = () => HttpContext.GetTokenAsync("id_token").Result;
+  }      
+...
+```
+
 #### Additions to api spec
 
 - ICloudDataObject.Get
@@ -88,4 +131,4 @@ The options UserAccessToken and UserName are of type Func<string>, allowing to d
     
 ### Remarks
     
-Any contributions (code, documentation) is also welcome. 
+Any contributions (code, documentation) are welcome. 

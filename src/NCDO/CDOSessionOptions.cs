@@ -69,11 +69,6 @@ namespace NCDO
         /// </summary>
         public Func<string> UserName { get; set; } = () => null;
 
-        /// <summary>
-        /// Context object to invoke on
-        /// </summary>
-        public Object Context { get; set; }
-
         #endregion
 
         /// <summary>
