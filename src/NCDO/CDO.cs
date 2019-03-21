@@ -539,9 +539,15 @@ namespace NCDO
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
+            if (_cDOSession.LoginResult != SessionStatus.AUTHENTICATION_SUCCESS && _cDOSession.Options.AuthenticationModel == AuthenticationModel.Bearer_OnBehalf)
+            {
+                await _cDOSession.Login(cancellationToken);
+            }
+
             if (_cDOSession.LoginResult != SessionStatus.AUTHENTICATION_SUCCESS)
                 throw new CDOException(_cDOSession.LoginResult.ToString(),
                     _cDOSession.Connected ? Resources.Session_NotAuthenticated : Resources.Session_NoNetwork);
+            
 
             if (cDORequest.Method == HttpMethod.Get)
             {

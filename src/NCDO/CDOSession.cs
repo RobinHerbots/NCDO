@@ -47,6 +47,7 @@ namespace NCDO
         #endregion
 
         public CDOSessionOptions Options { get; private set; }
+
         /// <inheritdoc />
         public Uri ServiceURI => Options.ServiceUri;
 
@@ -80,13 +81,14 @@ namespace NCDO
                     _authContext = new AuthenticationContext(Options.Authority, _tokenCache);
                     var clientCredential = new ClientCredential(Options.ClientId, Options.ClientSecret);
 
-                    if(AuthenticationModel == AuthenticationModel.Bearer)
-                    return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential)).AccessToken;
+                    if (AuthenticationModel == AuthenticationModel.Bearer)
+                        return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential)).AccessToken;
                     else
                     {
                         UserAssertion userAssertion = new UserAssertion(Options.UserAccessToken.Invoke(),
                             "urn:ietf:params:oauth:grant-type:jwt-bearer", Options.UserName.Invoke());
-                        return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential,userAssertion)).AccessToken;
+                        return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential, userAssertion))
+                            .AccessToken;
                     }
                 case AuthenticationModel.Bearer_WIA:
                     if (Options.ClientId == null) throw new ArgumentNullException(nameof(Options.ClientId));
@@ -146,14 +148,18 @@ namespace NCDO
             ThrowIfDisposed();
             try
             {
-                var urlBuilder = new StringBuilder(Options.ServiceUri.AbsoluteUri);
-                using (var request = new HttpRequestMessage())
+                if (Options.AuthenticationModel != AuthenticationModel.Bearer_OnBehalf ||
+                    !string.IsNullOrEmpty(Options.UserName.Invoke()))
                 {
-                    await PrepareLoginRequest(request, urlBuilder);
-                    await OnOpenRequest(HttpClient, request);
-                    var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,
-                        cancellationToken);
-                    await ProcessLoginResponse(response);
+                    var urlBuilder = new StringBuilder(Options.ServiceUri.AbsoluteUri);
+                    using (var request = new HttpRequestMessage())
+                    {
+                        await PrepareLoginRequest(request, urlBuilder);
+                        await OnOpenRequest(HttpClient, request);
+                        var response = await HttpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead,
+                            cancellationToken);
+                        await ProcessLoginResponse(response);
+                    }
                 }
             }
             catch (Exception)

@@ -61,8 +61,8 @@ namespace NCDO.Interfaces
         /// Returns the user ID passed as a parameter to the most recent call to the login( ) method on the current CDOSession object.
         /// </summary>
         string UserName { get; }
-
         HttpClient HttpClient { get; }
+        CDOSessionOptions Options { get; }
         #endregion
         #region Methods
         /// <summary>
