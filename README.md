@@ -101,15 +101,12 @@ The options UserAccessToken and UserName are of type Func<string>, allowing to d
    }
 ```
 
-####### Controller
+####### Controller constructor
     
 ```
 ...
-  public override void OnActionExecuting(ActionExecutingContext context)
-  {
       _ncdoServiceClient.Options.UserName = () => User.Identity.Name;
       _ncdoServiceClient.Options.UserAccessToken = () => HttpContext.GetTokenAsync("id_token").Result;
-  }      
 ...
 ```
 
