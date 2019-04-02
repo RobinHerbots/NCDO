@@ -17,7 +17,6 @@ using NCDO.Events;
 using NCDO.Extensions;
 using NCDO.Interfaces;
 using NCDO.Properties;
-using Newtonsoft.Json;
 
 namespace NCDO
 {
