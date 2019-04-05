@@ -73,20 +73,25 @@ namespace NCDO
         {
             return ToString(null);
         }
+
         public string ToString(string capabilities)
         {
             if (string.IsNullOrEmpty(capabilities))
-                return ABLFilter.Trim('"');
+                return string.IsNullOrEmpty(ABLFilter) ? "" : ABLFilter.Trim('"');
 
-            if (!string.IsNullOrEmpty(ID) && capabilities.IndexOf("id", StringComparison.InvariantCultureIgnoreCase) != -1)
+            if (!string.IsNullOrEmpty(ID) &&
+                capabilities.IndexOf("id", StringComparison.InvariantCultureIgnoreCase) != -1)
                 return $"ID={ID}";
 
             var filter = new JsonObject();
-            if (!string.IsNullOrEmpty(ABLFilter) && capabilities.IndexOf("ablFilter", StringComparison.InvariantCultureIgnoreCase) != -1)
+            if (!string.IsNullOrEmpty(ABLFilter) &&
+                capabilities.IndexOf("ablFilter", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("ablFilter", ABLFilter);
-            if (!string.IsNullOrEmpty(null) && capabilities.IndexOf("sqlQuery", StringComparison.InvariantCultureIgnoreCase) != -1)
+            if (!string.IsNullOrEmpty(null) &&
+                capabilities.IndexOf("sqlQuery", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("sqlQuery", "");
-            if (!string.IsNullOrEmpty(Sort) && capabilities.IndexOf("orderBy", StringComparison.InvariantCultureIgnoreCase) != -1)
+            if (!string.IsNullOrEmpty(Sort) &&
+                capabilities.IndexOf("orderBy", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("orderBy", Sort);
             if (default(int) != Skip && capabilities.IndexOf("skip", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("skip", Skip);
@@ -94,7 +99,6 @@ namespace NCDO
                 filter.Add("top", Top);
 
             return filter.ToString();
-
         }
 
         #endregion

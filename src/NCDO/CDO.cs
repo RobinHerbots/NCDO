@@ -193,7 +193,7 @@ namespace NCDO
         }
 
         /// <inheritdoc />
-        public async Task<D> Get(Expression<Func<R, bool>> filter,
+        public async Task<D> Get(Expression<Func<R, bool>> filter = null,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -369,7 +369,7 @@ namespace NCDO
         public async Task<ICDORequest> Read(Expression<Func<R, bool>> filter,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Read(new QueryRequest() {ABLFilter = filter.ToABLFIlter()}, cancellationToken);
+            return await Read(new QueryRequest() {ABLFilter = filter?.ToABLFIlter()}, cancellationToken);
         }
 
         public void ReadLocal()
@@ -538,7 +538,8 @@ namespace NCDO
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
-            if (_cDOSession.LoginResult != SessionStatus.AUTHENTICATION_SUCCESS && _cDOSession.Options.AuthenticationModel == AuthenticationModel.Bearer_OnBehalf)
+            if (_cDOSession.LoginResult != SessionStatus.AUTHENTICATION_SUCCESS &&
+                _cDOSession.Options.AuthenticationModel == AuthenticationModel.Bearer_OnBehalf)
             {
                 await _cDOSession.Login(cancellationToken);
             }
@@ -546,7 +547,7 @@ namespace NCDO
             if (_cDOSession.LoginResult != SessionStatus.AUTHENTICATION_SUCCESS)
                 throw new CDOException(_cDOSession.LoginResult.ToString(),
                     _cDOSession.Connected ? Resources.Session_NotAuthenticated : Resources.Session_NoNetwork);
-            
+
 
             if (cDORequest.Method == HttpMethod.Get)
             {
