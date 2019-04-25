@@ -14,10 +14,10 @@ namespace NCDO.CDOMemory
     public partial class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking
         where T : CDO_Record, new()
     {
-        protected List<T> _list;
-        internal List<T> _new = new List<T>();
-        internal List<T> _changed = new List<T>();
-        internal List<T> _deleted = new List<T>();
+        protected Dictionary<string, T> _list;
+        internal Dictionary<string, T> _new = new Dictionary<string, T>();
+        internal Dictionary<string, T> _changed = new Dictionary<string, T>();
+        internal Dictionary<string, T> _deleted = new Dictionary<string, T>();
 
         public CDO_Table(params T[] items) : this((IEnumerable<T>) items)
         {
@@ -28,8 +28,11 @@ namespace NCDO.CDOMemory
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
 
-            _list = items.ToList();
-            _list.ForEach(item => item.PropertyChanged += Item_PropertyChanged);
+            _list = items.ToDictionary(record =>
+            {
+                record.PropertyChanged += Item_PropertyChanged;
+                return record.GetId();
+            });
         }
 
         public CDO_Table(IEnumerable<JsonObject> items) : this(items.Select(i =>
@@ -78,9 +81,9 @@ namespace NCDO.CDOMemory
         {
             lock (_list)
             {
-                if (justAdd || !_list.Contains(item))
+                if (justAdd || !_list.ContainsKey(item.GetId()))
                 {
-                    _list.Add(item);
+                    _list.Add(item.GetId(), item);
                     item.PropertyChanged -= Item_PropertyChanged;
                     item.PropertyChanged += Item_PropertyChanged;
                     if (notify)
@@ -101,7 +104,7 @@ namespace NCDO.CDOMemory
                             break;
                         case MergeMode.Replace:
                             RemoveAt(index);
-                            _list.Add(item);
+                            _list.Add(item.GetId(), item);
                             if (notify)
                                 OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] {item}, index);
                             break;
@@ -124,50 +127,50 @@ namespace NCDO.CDOMemory
 
         public new void Clear()
         {
-            var oldList = new List<T>();
-            oldList.AddRange(_list);
+            var oldList = _list.ToDictionary(i => i.Key, i => i.Value);
             _list.Clear();
-            OnCollectionChanged(NotifyCollectionChangedAction.Reset, oldList);
+            OnCollectionChanged(NotifyCollectionChangedAction.Reset, oldList.Values);
         }
 
-        public bool Contains(T item) => _list.Contains(item);
+        public bool Contains(T item) => _list.ContainsKey(item.GetId());
 
         public void CopyTo(T[] array, int arrayIndex)
         {
-            _list.CopyTo(array, arrayIndex);
+            foreach (T cdoRecord in array)
+            {
+                _list.ContainsKey(cdoRecord.GetId());
+                _list.Add(cdoRecord.GetId(), cdoRecord);
+            }
         }
 
         public override int Count => _list.Count;
 
-        public IEnumerator<T> GetEnumerator() => _list.GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => _list.Select(i => i.Value).GetEnumerator();
 
         public int IndexOf(T item)
         {
-            var itemId = item.GetId();
-            return _list.FindIndex(i => i.GetId() == itemId);
+            return _list.Keys.ToList().IndexOf(item.GetId());
         }
 
         public void Insert(int index, T item)
         {
-            if (_list.Contains(item))
+            if (_list.ContainsKey(item.GetId()))
             {
-                var ndx = IndexOf(item);
-                _list.RemoveAt(ndx);
+                _list[item.GetId()] = item;
                 OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] {item});
             }
             else
             {
+                _list.Add(item.GetId(), item);
                 OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] {item});
             }
-
-            _list.Insert(index, item);
         }
 
         public new bool IsReadOnly => false;
 
         public new T this[int index]
         {
-            get => _list[index];
+            get => _list[_list.Keys.ToList()[index]];
             set => Insert(index, value);
         }
 
@@ -181,7 +184,7 @@ namespace NCDO.CDOMemory
         public new void RemoveAt(int index)
         {
             OnCollectionChanged(NotifyCollectionChangedAction.Remove, null, index);
-            _list.RemoveAt(index);
+            _list.Remove(_list.Keys.ToList()[index]);
         }
 
         public void AddRange(IEnumerable<T> items)
@@ -204,34 +207,41 @@ namespace NCDO.CDOMemory
 
         public override void Save(Stream stream)
         {
-            if (stream == null)
-                throw new ArgumentNullException(nameof(stream));
-
-            stream.WriteByte((byte) '[');
-
-            for (var i = 0; i < _list.Count; i++)
+            lock (_list)
             {
-                JsonValue v = _list[i];
-                if (v != null)
-                {
-                    v.Save(stream);
-                }
-                else
-                {
-                    stream.WriteByte((byte) 'n');
-                    stream.WriteByte((byte) 'u');
-                    stream.WriteByte((byte) 'l');
-                    stream.WriteByte((byte) 'l');
-                }
+                if (stream == null)
+                    throw new ArgumentNullException(nameof(stream));
 
-                if (i < Count - 1)
+                stream.WriteByte((byte) '[');
+
+
+                var listEnum = _list.GetEnumerator();
+                var next = listEnum.MoveNext();
+                while (next)
                 {
-                    stream.WriteByte((byte) ',');
-                    stream.WriteByte((byte) ' ');
+                    JsonValue v = listEnum.Current.Value;
+                    if (v != null)
+                    {
+                        v.Save(stream);
+                    }
+                    else
+                    {
+                        stream.WriteByte((byte) 'n');
+                        stream.WriteByte((byte) 'u');
+                        stream.WriteByte((byte) 'l');
+                        stream.WriteByte((byte) 'l');
+                    }
+
+                    next = listEnum.MoveNext();
+                    if (next)
+                    {
+                        stream.WriteByte((byte) ',');
+                        stream.WriteByte((byte) ' ');
+                    }
+
+                    stream.WriteByte((byte) ']');
                 }
             }
-
-            stream.WriteByte((byte) ']');
         }
 
         #region Implementation of INotifyCollectionChanged
@@ -253,7 +263,7 @@ namespace NCDO.CDOMemory
                         {
                             lock (_new)
                             {
-                                if (_new.All(r => r.GetId() != item.GetId()))
+                                if (!_new.ContainsKey(item.GetId()))
                                 {
                                     AddNew(_changed, new[] {item}, DataRowState.Modified);
                                 }
@@ -262,7 +272,7 @@ namespace NCDO.CDOMemory
 
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    var removeList = index != -1 ? new[] {_list[index]} : items;
+                    var removeList = index != -1 ? new[] {_list[_list.Keys.ToList()[index]]} : items;
                     removeList = removeList.Where(i =>
                     {
                         if (!int.TryParse(i.GetId(), out int id)) id = -1;
@@ -281,9 +291,9 @@ namespace NCDO.CDOMemory
                     });
                     AddNew(_changed, replaceList, DataRowState.Modified);
 
-                    if (!int.TryParse(_list[index].GetId(), out ndx)) ndx = -1;
+                    if (!int.TryParse(_list.Keys.ToList()[index], out ndx)) ndx = -1;
                     if (ndx >= 0)
-                        AddNew(_deleted, new[] {_list[index]}, DataRowState.Deleted);
+                        AddNew(_deleted, new[] {_list[_list.Keys.ToList()[index]]}, DataRowState.Deleted);
 
                     break;
                 case NotifyCollectionChangedAction.Reset:
@@ -338,7 +348,7 @@ namespace NCDO.CDOMemory
             return changed;
         }
 
-        private void AddNew(IList<T> list, IEnumerable<T> items, DataRowState rowState)
+        private void AddNew(IDictionary<string, T> list, IEnumerable<T> items, DataRowState rowState)
         {
             if (items != null)
             {
@@ -346,7 +356,7 @@ namespace NCDO.CDOMemory
                 {
                     lock (list)
                     {
-                        if (!list.Contains(item))
+                        if (!list.ContainsKey(item.GetId()))
                         {
                             var itemClone = item;
                             if (rowState == DataRowState.Deleted)
@@ -359,7 +369,7 @@ namespace NCDO.CDOMemory
                                 itemClone.Set("prods:id", item.GetId());
                             itemClone.Set("prods:rowState", rowState.ToString().ToLowerInvariant());
                             itemClone.Set("prods:clientId", item.GetId()); //defines the id used on the client
-                            list.Add(itemClone);
+                            list.Add(itemClone.GetId(), itemClone);
                         }
                     }
                 }
@@ -399,28 +409,27 @@ namespace NCDO.CDOMemory
         {
             lock (_new)
             {
-                foreach (var record in _new)
+                foreach (var recordKey in _new.Keys)
                 {
-                    var index = IndexOf(record);
-                    _list.RemoveAt(index);
+                    _list.Remove(recordKey);
                 }
 
-                foreach (var record in _changed)
+                foreach (var record in _changed.Values)
                 {
                     record.RejectRowChanges();
                 }
 
                 _changed.Clear();
-                AddRange(_deleted);
+                AddRange(_deleted.Values);
                 _deleted.Clear();
             }
         }
 
         #region Convenience mappers
 
-        public IReadOnlyList<T> New => _new;
-        public IReadOnlyList<T> Modified => _changed;
-        public IReadOnlyList<T> Deleted => _deleted;
+        public IReadOnlyDictionary<string, T> New => _new;
+        public IReadOnlyDictionary<string, T> Modified => _changed;
+        public IReadOnlyDictionary<string, T> Deleted => _deleted;
 
         #endregion
 
@@ -435,11 +444,11 @@ namespace NCDO.CDOMemory
             var count = -1;
             if (New != null && New.Count > 1)
             {
-                foreach (T record in New)
+                foreach (T record in New.Values)
                 {
                     //Temp-table defined with "like" takes the indices from the table and thus need to be unique
                     //add a negative generated id
-                    record[string.IsNullOrEmpty(record.primaryKey) ? "ID" : record.primaryKey] = count--;
+                    record.SetId((count--).ToString());
                 }
             }
 
@@ -451,11 +460,11 @@ namespace NCDO.CDOMemory
             var count = -1;
             if (Count > 0)
             {
-                foreach (T record in _list.Where(i => i[string.IsNullOrEmpty(i.primaryKey) ? "ID" : i.primaryKey] < 0))
+                foreach (var record in _list.Where(i => i.Key.StartsWith("-")))
                 {
                     //Temp-table defined with "like" takes the indices from the table and thus need to be unique
                     //add a negative generated id
-                    record[string.IsNullOrEmpty(record.primaryKey) ? "ID" : record.primaryKey] = count--;
+                    record.Value.SetId((count--).ToString());
                 }
             }
 
@@ -470,7 +479,7 @@ namespace NCDO.CDOMemory
         /// <returns></returns>
         public CDO_Table<T> RelateNewTo(string relTable, string relId)
         {
-            foreach (T record in New)
+            foreach (T record in New.Values)
             {
                 record["RelTable"] = relTable;
                 record["RelID"] = relId;

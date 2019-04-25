@@ -10,13 +10,16 @@ namespace NCDO.Interfaces
     public interface ICloudDataRecord : INotifyPropertyChanged, INotifyPropertyChanging, IChangeTracking
     {
         #region Properties
+
         /// <summary>
         /// The data (field values) for a record.
         /// </summary>
         IEnumerable<KeyValuePair<string, JsonValue>> Data { get; }
+
         #endregion
 
         #region Methods
+
         /// <summary>
         /// Accepts changes to the data in CDO memory for a specified record object.
         /// </summary>
@@ -26,6 +29,7 @@ namespace NCDO.Interfaces
         /// Updates field values for the specified CloudDataRecord object in CDO memory.
         /// </summary>
         void Assign(IEnumerable<KeyValuePair<string, JsonValue>> values);
+
         /// <summary>
         /// Returns any before-image error string in the data of a record
         /// object referenced in CDO memory that was set as the result
@@ -33,12 +37,23 @@ namespace NCDO.Interfaces
         /// </summary>
         /// <returns></returns>
         string GetErrorString();
+
         /// <summary>
         /// Returns the unique internal ID for the record object
         /// referenced in CDO memory.
         /// </summary>
         /// <returns></returns>
         string GetId();
+        /// <summary>
+        /// Set the primary key value for id negation etc 
+        /// </summary>
+        /// <param name="value"></param>
+        void SetId(string value);
+        /// <summary>
+        /// Define which property is the primary key for the generic CDO_Record
+        /// </summary>
+        string PrimaryKeyName { get; set; }
+
         /// <summary>
         /// Deletes the specified table record referenced in CDO memory.
         /// </summary>
@@ -48,6 +63,7 @@ namespace NCDO.Interfaces
         /// record object.
         /// </summary>
         void RejectRowChanges();
+
         /// <summary>
         /// Indicates if a property is changed
         /// </summary>
@@ -57,4 +73,4 @@ namespace NCDO.Interfaces
 
         #endregion
     }
-} 
+}

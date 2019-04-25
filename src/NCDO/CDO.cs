@@ -46,9 +46,7 @@ namespace NCDO
         private readonly ICDOSession _cDOSession;
         protected D _cdoMemory = new D();
         private string _mainTable;
-        private string _primaryKey;
-        private Resource _resourceDefinition;
-        private Service _serviceDefinition;
+        private (Service service, Resource resource) _catalogDefinition;
         private static SemaphoreSlim _requestMutex = new SemaphoreSlim(1, 1);
         private static SemaphoreSlim _saveChangesMutex = new SemaphoreSlim(1, 1);
 
@@ -198,9 +196,9 @@ namespace NCDO
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            BeforeRead += ACloudDataObject_BeforeRead;
+//            BeforeRead += ACloudDataObject_BeforeRead;
             var read = await Read(filter, cancellationToken);
-            BeforeRead -= ACloudDataObject_BeforeRead;
+//            BeforeRead -= ACloudDataObject_BeforeRead;
 
             if (read.Success.HasValue && read.Success.Value)
             {
@@ -270,7 +268,7 @@ namespace NCDO
 
         public Schema GetSchema()
         {
-            return _resourceDefinition.Schema;
+            return _catalogDefinition.resource.Schema;
         }
 
         public bool HasChanges()
@@ -298,17 +296,19 @@ namespace NCDO
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            var operationDefinition = VerifyOperation(operation);
+            var operationDefinition = _cDOSession.VerifyOperation(Name, operation);
             //init request if needed
             var cDORequest = new CDORequest
             {
                 InvokeOperation = true,
                 CDO = this,
                 FnName = operationDefinition.Name,
-                ObjParam = _serviceDefinition.UseRequest ? new JsonObject {{"request", inputObject}} : inputObject,
+                ObjParam = _catalogDefinition.service.UseRequest
+                    ? new JsonObject {{"request", inputObject}}
+                    : inputObject,
                 RequestUri =
                     new Uri(
-                        $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}{operationDefinition.Path}",
+                        $"{_cDOSession.ServiceURI.AbsoluteUri}{_catalogDefinition.service.Address}{_catalogDefinition.resource.Path}{operationDefinition.Path}",
                         UriKind.Absolute),
                 Method = new HttpMethod(operationDefinition.Verb.ToString().ToUpper())
             };
@@ -325,7 +325,7 @@ namespace NCDO
         public async Task<ICDORequest> Read(QueryRequest queryRequest = null,
             CancellationToken cancellationToken = default(CancellationToken))
         {
-            return await Read(queryRequest?.ToString(_resourceDefinition.Operations
+            return await Read(queryRequest?.ToString(_catalogDefinition.resource.Operations
                 .FirstOrDefault(o => o.Type == OperationType.Read)?.Capabilities), cancellationToken);
         }
 
@@ -334,7 +334,7 @@ namespace NCDO
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            var operationDefinition = VerifyOperation(null, OperationType.Read);
+            var operationDefinition = _cDOSession.VerifyOperation(Name, null, OperationType.Read);
 
             //setup filter for get request
             var filterpath = string.IsNullOrEmpty(filter)
@@ -348,7 +348,7 @@ namespace NCDO
                 FnName = operationDefinition.Name,
                 RequestUri =
                     new Uri(
-                        $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}{filterpath}",
+                        $"{_cDOSession.ServiceURI.AbsoluteUri}{_catalogDefinition.service.Address}{_catalogDefinition.resource.Path}{filterpath}",
                         UriKind.Absolute),
                 Method = new HttpMethod(operationDefinition.Verb.ToString().ToUpper())
             };
@@ -417,17 +417,17 @@ namespace NCDO
                 //delete
                 if (tableRef._deleted.Any())
                 {
-                    operation = VerifyOperation(null, OperationType.Delete);
+                    operation = _cDOSession.VerifyOperation(Name, null, OperationType.Delete);
                     var deleteRequest = new CDORequest
                     {
                         CDO = this,
                         FnName = operation.Name,
                         RequestUri =
                             new Uri(
-                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
+                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_catalogDefinition.service.Address}{_catalogDefinition.resource.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D {{_mainTable, new CDO_Table<R>(tableRef._deleted)}}
+                        ObjParam = new D {{_mainTable, new CDO_Table<R>(tableRef._deleted.Values)}}
                     };
                     BeforeDelete?.Invoke(this,
                         new CDOEventArgs<T, D, R> {CDO = this, Request = deleteRequest, Session = _cDOSession});
@@ -439,17 +439,17 @@ namespace NCDO
                 //create
                 if (tableRef._new.Any())
                 {
-                    operation = VerifyOperation(null, OperationType.Create);
+                    operation = _cDOSession.VerifyOperation(Name, null, OperationType.Create);
                     var createRequest = new CDORequest
                     {
                         CDO = this,
                         FnName = operation.Name,
                         RequestUri =
                             new Uri(
-                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
+                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_catalogDefinition.service.Address}{_catalogDefinition.resource.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D {{_mainTable, new CDO_Table<R>(tableRef._new)}}
+                        ObjParam = new D {{_mainTable, new CDO_Table<R>(tableRef._new.Values)}}
                     };
                     BeforeCreate?.Invoke(this,
                         new CDOEventArgs<T, D, R> {CDO = this, Request = createRequest, Session = _cDOSession});
@@ -461,17 +461,17 @@ namespace NCDO
                 //update
                 if (tableRef._changed.Any())
                 {
-                    operation = VerifyOperation(null, OperationType.Update);
+                    operation = _cDOSession.VerifyOperation(Name, null, OperationType.Update);
                     var updateRequest = new CDORequest
                     {
                         CDO = this,
                         FnName = operation.Name,
                         RequestUri =
                             new Uri(
-                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_serviceDefinition.Address}{_resourceDefinition.Path}",
+                                $"{_cDOSession.ServiceURI.AbsoluteUri}{_catalogDefinition.service.Address}{_catalogDefinition.resource.Path}",
                                 UriKind.Absolute),
                         Method = new HttpMethod(operation.Verb.ToString().ToUpper()),
-                        ObjParam = new D {{_mainTable, new CDO_Table<R>(tableRef._changed)}}
+                        ObjParam = new D {{_mainTable, new CDO_Table<R>(tableRef._changed.Values)}}
                     };
                     BeforeUpdate?.Invoke(this,
                         new CDOEventArgs<T, D, R> {CDO = this, Request = updateRequest, Session = _cDOSession});
@@ -621,7 +621,7 @@ namespace NCDO
                     if (TableReference.New != null)
                         for (var ndx = 0; ndx < TableReference.New.Count; ndx++)
                         {
-                            var r = TableReference.New[ndx];
+                            var r = TableReference.New[TableReference.New.Keys.ToList()[ndx]];
                             try //try to recover the new ID
                             {
                                 //var primaryKey = r.primaryKey ?? "ID";
@@ -652,46 +652,13 @@ namespace NCDO
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
-            VerifyResourceName(Name);
-            DetermineMainTable();
+            _catalogDefinition = _cDOSession.VerifyResourceName(Name);
+            _mainTable = _cDOSession.DetermineMainTable(Name);
             if (autoFill)
             {
                 Fill(cancellationToken: cancellationToken).Wait(cancellationToken);
             }
             else _cdoMemory.Init();
-        }
-
-        /// <summary>
-        ///     Verify if the resource is available and return the catalog definition for the catalog
-        /// </summary>
-        /// <param name="resource"></param>
-        /// <returns></returns>
-        private Resource VerifyResourceName(string resource)
-        {
-            _serviceDefinition =
-                _cDOSession.Services.FirstOrDefault(s => s.Resources.Any(r => r.Name.Equals(resource)));
-            var resourceDefinition = _serviceDefinition?.Resources.FirstOrDefault(r => r.Name.Equals(resource));
-            if (resourceDefinition == null)
-                throw new NotSupportedException($"Invalid resource name {resource}.");
-            return _resourceDefinition = resourceDefinition;
-        }
-
-        private Operation VerifyOperation(string operation, OperationType operationType = OperationType.Invoke)
-        {
-            var operationDefinition = _resourceDefinition.Operations.FirstOrDefault(o =>
-                o.Type == operationType && (string.IsNullOrEmpty(operation) || o.Name.Equals(operation)));
-            if (operationDefinition == null)
-                throw new NotSupportedException($"Invalid {operationType} operation {operation}.");
-            return operationDefinition;
-        }
-
-        private void DetermineMainTable()
-        {
-            _mainTable = _resourceDefinition.Relations != null && _resourceDefinition.Relations.Count > 0
-                ? _resourceDefinition.Relations.FirstOrDefault().ParentName
-                : _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties.FirstOrDefault().Key;
-            _primaryKey = _resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties[_mainTable]
-                .PrimaryKey.FirstOrDefault();
         }
 
         #endregion

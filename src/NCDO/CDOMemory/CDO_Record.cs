@@ -17,70 +17,25 @@ using JsonPairEnumerable =
 
 namespace NCDO.CDOMemory
 {
-    public partial class CDO_Record<T> : CDO_Record where T : CDO_Record, new()
+    public abstract class CDO_Record<T> : CDO_Record where T : CDO_Record, new()
     {
-        protected static JsonObject Defaults = new T();
-        private static string _primaryKey = "";
-
         #region Constructor
 
-        public CDO_Record(params JsonPair[] items) : this()
+        public CDO_Record(params JsonPair[] items)
         {
             AddRange(items);
         }
 
-        public CDO_Record(JsonPairEnumerable items) : this()
+        public CDO_Record(JsonPairEnumerable items)
         {
             AddRange(items);
         }
 
         public CDO_Record()
         {
-            InitializeRecord(); //only initialize after _defaults instantiation
-            primaryKey = _primaryKey;
-            if (!string.IsNullOrEmpty(primaryKey))
-                _pkValue = Defaults?.Get(primaryKey);
         }
 
         #endregion
-
-
-        private void InitializeRecord()
-        {
-            if (Defaults == null) return;
-            lock (Defaults)
-            {
-                if ((Defaults).Count == 0)
-                {
-                    var props = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
-                    foreach (var propertyInfo in props)
-                    {
-                        var defaultValueAttribute = propertyInfo.GetCustomAttribute<DefaultValueAttribute>();
-                        if (defaultValueAttribute != null && propertyInfo.CanWrite)
-                        {
-                            var targetType = propertyInfo.PropertyType.IsNullableType()
-                                ? Nullable.GetUnderlyingType(propertyInfo.PropertyType)
-                                : propertyInfo.PropertyType;
-                            propertyInfo.SetValue(Defaults,
-                                defaultValueAttribute.Value != null
-                                    ? Convert.ChangeType(defaultValueAttribute.Value, targetType)
-                                    : defaultValueAttribute.Value);
-                        }
-
-                        if (string.IsNullOrEmpty(_primaryKey) &&
-                            propertyInfo.GetCustomAttribute<KeyAttribute>() != null)
-                        {
-                            _primaryKey = propertyInfo.Name;
-                        }
-                    }
-                }
-            }
-
-            foreach (var keyValuePair in Defaults)
-            {
-                Add(keyValuePair.Key, keyValuePair.Value, false);
-            }
-        }
 
         public virtual S Default<S>(Expression<Func<T, S>> propertyExpression)
         {
@@ -95,29 +50,14 @@ namespace NCDO.CDOMemory
 
         #region Overrides of CDO_Record
 
-        private object _pkValue = null; //default PK value ~ performance CRUD
-
         /// <inheritdoc />
-        public override string GetId()
-        {
-            if (string.IsNullOrEmpty(primaryKey))
-                return _id;
-            return Defaults.Get(primaryKey).AsString() == this.Get(primaryKey).AsString() ? _id : this.Get(primaryKey).AsString();
-        }
+        public new abstract string GetId();
+
+        public new abstract void SetId(string value);
+
+        public override ICollection<string> Keys => Activator.CreateInstance<T>().Keys;
 
         #endregion
-
-
-        public override ICollection<string> Keys
-        {
-            get
-            {
-                lock (Defaults)
-                {
-                    return Defaults != null ? Defaults.Keys : base.Keys;
-                }
-            }
-        }
     }
 
 
@@ -128,12 +68,7 @@ namespace NCDO.CDOMemory
         /// <summary>
         ///     An internal field for the CDO that is provided to find a given record in its memory.
         /// </summary>
-        protected readonly string _id = Guid.NewGuid().ToString();
-
-        /// <summary>
-        /// this field is used in the generic version of CDO_Record
-        /// </summary>
-        protected internal string primaryKey = "";
+        private string _id = Guid.NewGuid().ToString();
 
         #region Constructor
 
@@ -178,7 +113,17 @@ namespace NCDO.CDOMemory
         }
 
         /// <inheritdoc />
-        public virtual string GetId() => _id;
+        public string GetId() => string.IsNullOrEmpty(PrimaryKeyName) ? _id : this.Get(PrimaryKeyName).ToString();
+
+        public void SetId(string value)
+        {
+            if (string.IsNullOrEmpty(PrimaryKeyName))
+                _id = value;
+            else this.Set(PrimaryKeyName, value);
+        }
+
+        public string PrimaryKeyName { get; set; }
+
 
         /// <inheritdoc />
         public void RejectRowChanges()
