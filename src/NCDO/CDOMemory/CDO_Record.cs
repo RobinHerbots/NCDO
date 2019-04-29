@@ -55,7 +55,7 @@ namespace NCDO.CDOMemory
 
         public new abstract void SetId(string value);
 
-        public override ICollection<string> Keys => Activator.CreateInstance<T>().Keys;
+        public override ICollection<string> Keys { get; } = Activator.CreateInstance<T>().Keys;
 
         #endregion
     }
