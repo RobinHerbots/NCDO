@@ -19,6 +19,8 @@ namespace NCDO.CDOMemory
 {
     public abstract class CDO_Record<T> : CDO_Record where T : CDO_Record, new()
     {
+        private static ICollection<string> _keys;
+
         #region Constructor
 
         public CDO_Record(params JsonPair[] items)
@@ -54,8 +56,6 @@ namespace NCDO.CDOMemory
         public new abstract string GetId();
 
         public new abstract void SetId(string value);
-
-        public override ICollection<string> Keys { get; } = Activator.CreateInstance<T>().Keys;
 
         #endregion
     }
