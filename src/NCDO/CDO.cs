@@ -194,10 +194,17 @@ namespace NCDO
         public async Task<D> Get(Expression<Func<R, bool>> filter = null,
             CancellationToken cancellationToken = default(CancellationToken))
         {
+            return await Get(new QueryRequest() {ABLFilter = filter?.ToABLFIlter()}, cancellationToken);
+        }
+        
+        /// <inheritdoc />
+        public async Task<D> Get(QueryRequest request,
+            CancellationToken cancellationToken = default(CancellationToken))
+        {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 //            BeforeRead += ACloudDataObject_BeforeRead;
-            var read = await Read(filter, cancellationToken);
+            var read = await Read(request, cancellationToken);
 //            BeforeRead -= ACloudDataObject_BeforeRead;
 
             if (read.Success.HasValue && read.Success.Value)
