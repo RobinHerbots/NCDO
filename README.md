@@ -72,7 +72,7 @@ The options UserAccessToken and UserName are of type Func<string>, allowing to d
 
 ###### ASP.NET Core / MVC
 
-####### appsettings.json
+- appsettings.json
 
 ```
 ...
@@ -87,7 +87,7 @@ The options UserAccessToken and UserName are of type Func<string>, allowing to d
 ...
 ```
 
-####### Startup
+- Startup
 
 ```
    public void ConfigureServices(IServiceCollection services)
@@ -101,7 +101,7 @@ The options UserAccessToken and UserName are of type Func<string>, allowing to d
    }
 ```
 
-####### Controller constructor
+- Controller constructor
     
 ```
 ...
