@@ -19,8 +19,6 @@ namespace NCDO.CDOMemory
 {
     public abstract class CDO_Record<T> : CDO_Record where T : CDO_Record, new()
     {
-        private static ICollection<string> _keys;
-
         #region Constructor
 
         public CDO_Record(params JsonPair[] items)
@@ -49,15 +47,6 @@ namespace NCDO.CDOMemory
             var converter = TypeDescriptor.GetConverter(typeof(S));
             return (S) converter.ConvertFromString(defaultValueAttribute?.Value.ToString());
         }
-
-        #region Overrides of CDO_Record
-
-        /// <inheritdoc />
-        public new abstract string GetId();
-
-        public new abstract void SetId(string value);
-
-        #endregion
     }
 
 
@@ -113,9 +102,9 @@ namespace NCDO.CDOMemory
         }
 
         /// <inheritdoc />
-        public string GetId() => string.IsNullOrEmpty(PrimaryKeyName) ? _id : this.Get(PrimaryKeyName).ToString();
+        public virtual string GetId() => string.IsNullOrEmpty(PrimaryKeyName) ? _id : this.Get(PrimaryKeyName).ToString();
 
-        public void SetId(string value)
+        public virtual void SetId(string value)
         {
             if (string.IsNullOrEmpty(PrimaryKeyName))
                 _id = value;
@@ -179,7 +168,9 @@ namespace NCDO.CDOMemory
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
             foreach (KeyValuePair<string, JsonValue> keyValuePair in items)
+            {
                 Add(keyValuePair.Key, keyValuePair.Value);
+            }
         }
 
         public new JsonValue this[string key]

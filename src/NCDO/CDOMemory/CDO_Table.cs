@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Json;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using NCDO.Definitions;
 using NCDO.Extensions;
 using NCDO.Interfaces;
@@ -28,11 +29,15 @@ namespace NCDO.CDOMemory
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
 
-            _list = items.ToDictionary(record =>
+            _list = new Dictionary<string, T>();
+            foreach (var record in items)
             {
                 record.PropertyChanged += Item_PropertyChanged;
-                return record.GetId();
-            });
+                if (!_list.ContainsKey(record.GetId()))
+                {
+                    _list.Add(record.GetId(), record);
+                }
+            }
         }
 
         public CDO_Table(IEnumerable<JsonObject> items) : this(items.Select(i =>
@@ -77,11 +82,11 @@ namespace NCDO.CDOMemory
         /// <param name="mergeMode"></param>
         /// <param name="notify"></param>
         /// <param name="justAdd"></param>
-        private void _internalAdd(T item, MergeMode mergeMode, bool notify = true, bool justAdd = false)
+        private void _internalAdd(T item, MergeMode mergeMode, bool notify = true)
         {
             lock (_list)
             {
-                if (justAdd || !_list.ContainsKey(item.GetId()))
+                if (!_list.ContainsKey(item.GetId()))
                 {
                     _list.Add(item.GetId(), item);
                     item.PropertyChanged -= Item_PropertyChanged;
@@ -91,7 +96,6 @@ namespace NCDO.CDOMemory
                 }
                 else
                 {
-                    var index = IndexOf(item);
                     switch (mergeMode)
                     {
                         case MergeMode.Empty:
@@ -99,14 +103,14 @@ namespace NCDO.CDOMemory
                         case MergeMode.Append:
                             throw new CDOException($"Duplicate record with ID {item.GetId()}");
                         case MergeMode.Merge:
+                            var index = IndexOf(item);
                             if (Merge(this[index], item) && notify)
                                 OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] {this[index]});
                             break;
                         case MergeMode.Replace:
-                            RemoveAt(index);
-                            _list.Add(item.GetId(), item);
+                            _list[item.GetId()] = item;
                             if (notify)
-                                OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] {item}, index);
+                                OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] {item});
                             break;
                         default:
                             throw new ArgumentOutOfRangeException(nameof(mergeMode), mergeMode, null);
@@ -129,7 +133,7 @@ namespace NCDO.CDOMemory
         {
             var oldList = _list.ToDictionary(i => i.Key, i => i.Value);
             _list.Clear();
-            OnCollectionChanged(NotifyCollectionChangedAction.Reset, oldList.Values);
+            OnCollectionChanged(NotifyCollectionChangedAction.Reset, oldList.Values.ToArray());
         }
 
         public bool Contains(T item) => _list.ContainsKey(item.GetId());
@@ -176,15 +180,15 @@ namespace NCDO.CDOMemory
 
         public bool Remove(T item)
         {
-            var index = IndexOf(item);
-            RemoveAt(index);
-            return true;
+            OnCollectionChanged(NotifyCollectionChangedAction.Remove, item);
+            return _list.Remove(item.GetId());
         }
 
         public new void RemoveAt(int index)
         {
-            OnCollectionChanged(NotifyCollectionChangedAction.Remove, null, index);
-            _list.Remove(_list.Keys.ToList()[index]);
+            var item = _list[_list.Keys.ToList()[index]];
+            OnCollectionChanged(NotifyCollectionChangedAction.Remove, item);
+            _list.Remove(item);
         }
 
         public void AddRange(IEnumerable<T> items)
@@ -198,10 +202,9 @@ namespace NCDO.CDOMemory
             if (items == null)
                 throw new ArgumentNullException(nameof(items));
 
-            var emptyList = _list.Count == 0;
             foreach (var item in items)
             {
-                _internalAdd(item, mergeMode, notify, emptyList);
+                _internalAdd(item, mergeMode, notify);
             }
         }
 
@@ -249,8 +252,7 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public event NotifyCollectionChangedEventHandler CollectionChanged;
 
-        protected virtual void OnCollectionChanged(NotifyCollectionChangedAction action, IEnumerable<T> items = null,
-            int index = -1)
+        protected virtual void OnCollectionChanged(NotifyCollectionChangedAction action, params T[] items)
         {
             switch (action)
             {
@@ -258,60 +260,35 @@ namespace NCDO.CDOMemory
                     AddNew(_new, items, DataRowState.Created);
                     break;
                 case NotifyCollectionChangedAction.Move:
-                    if (items != null)
-                        foreach (var item in items)
-                        {
-                            lock (_new)
-                            {
-                                if (!_new.ContainsKey(item.GetId()))
-                                {
-                                    AddNew(_changed, new[] {item}, DataRowState.Modified);
-                                }
-                            }
-                        }
-
+                    var modifyList = items?.Where(i => !_new.ContainsKey(i.GetId()));
+                    AddNew(_changed, modifyList, DataRowState.Modified);
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    var removeList = index != -1 ? new[] {_list[_list.Keys.ToList()[index]]} : items;
-                    removeList = removeList.Where(i =>
+                    var removeList = items.Where(i => !_new.ContainsKey(i.GetId()));
+                    //cleanup other dicts
+                    foreach (var item in items)
                     {
-                        if (!int.TryParse(i.GetId(), out int id)) id = -1;
-                        return id >= 0;
-                    });
+                        var id = item.GetId();
+                        _changed.Remove(id);
+                        _new.Remove(id);
+                    }
                     AddNew(_deleted, removeList, DataRowState.Deleted);
-
                     break;
                 case NotifyCollectionChangedAction.Replace:
-                    var replaceList = items;
-                    int ndx = 0;
-                    replaceList = replaceList.Where(i =>
-                    {
-                        if (!int.TryParse(i.GetId(), out ndx)) ndx = -1;
-                        return ndx >= 0;
-                    });
+                    var replaceList = items.Where(i => !_new.ContainsKey(i.GetId()));
                     AddNew(_changed, replaceList, DataRowState.Modified);
-
-                    if (!int.TryParse(_list.Keys.ToList()[index], out ndx)) ndx = -1;
-                    if (ndx >= 0)
-                        AddNew(_deleted, new[] {_list[_list.Keys.ToList()[index]]}, DataRowState.Deleted);
-
                     break;
                 case NotifyCollectionChangedAction.Reset:
-                    var resetList = items;
-                    resetList = resetList.Where(i =>
-                    {
-                        if (!int.TryParse(i.GetId(), out int rndx)) rndx = -1;
-                        return rndx >= 0;
-                    });
-                    AddNew(_deleted, resetList, DataRowState.Deleted);
-
+                    _changed.Clear();
+                    _new.Clear();
+                    _deleted.Clear();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(action), action, null);
             }
 
 
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(action, items, index));
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(action, items));
         }
 
         private void OnCollectionChanged(object sender, PropertyChangedEventArgs e)
