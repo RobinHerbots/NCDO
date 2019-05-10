@@ -7,6 +7,12 @@ namespace NCDO
 {
     public class QueryRequest : JsonObject
     {
+        public QueryRequest()
+        {
+            Top = Int32.MaxValue;
+            Skip = -1;
+        }
+
         /// <summary>
         ///     Filterstring used to select the records to be returned. These property settings are in the format as the property
         ///     settings in the Kendo UI DataSouce filter property object. For more information, see the filter configuration
