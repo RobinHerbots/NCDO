@@ -102,7 +102,7 @@ namespace NCDO.CDOMemory
         }
 
         /// <inheritdoc />
-        public virtual string GetId() => string.IsNullOrEmpty(PrimaryKeyName) ? _id : this.Get(PrimaryKeyName).ToString();
+        public virtual string GetId() => string.IsNullOrEmpty(PrimaryKeyName) || !ContainsKey(PrimaryKeyName) ? _id : this.Get(PrimaryKeyName).ToString();
 
         public virtual void SetId(string value)
         {
