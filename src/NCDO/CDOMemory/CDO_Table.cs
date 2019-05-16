@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -140,11 +141,7 @@ namespace NCDO.CDOMemory
 
         public void CopyTo(T[] array, int arrayIndex)
         {
-            foreach (T cdoRecord in array)
-            {
-                _list.ContainsKey(cdoRecord.GetId());
-                _list.Add(cdoRecord.GetId(), cdoRecord);
-            }
+            _list.Values.CopyTo(array, arrayIndex);
         }
 
         public override int Count => _list.Count;
@@ -272,6 +269,7 @@ namespace NCDO.CDOMemory
                         _changed.Remove(id);
                         _new.Remove(id);
                     }
+
                     AddNew(_deleted, removeList, DataRowState.Deleted);
                     break;
                 case NotifyCollectionChangedAction.Replace:
