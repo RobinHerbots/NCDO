@@ -26,9 +26,9 @@ module.exports = function (grunt) {
                         PackageVersion: '<%= pkg.version %>',
                         FileVersion: '<%= pkg.version %>',
                         Version: '<%= pkg.version %>',
-                        AssemblyVersion: '<%= pkg.version %>',
-                        inferMsbuildPath: true
+                        AssemblyVersion: '<%= pkg.version %>'
                     },
+                    inferMsbuildPath: true
                 },
              
             }
