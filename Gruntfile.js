@@ -28,7 +28,8 @@ module.exports = function (grunt) {
                         Version: '<%= pkg.version %>',
                         AssemblyVersion: '<%= pkg.version %>'
                     },
-                }
+                },
+                inferMsbuildPath: true
             }
         },
         nugetpush: {
