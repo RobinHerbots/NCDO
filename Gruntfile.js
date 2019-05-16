@@ -26,10 +26,11 @@ module.exports = function (grunt) {
                         PackageVersion: '<%= pkg.version %>',
                         FileVersion: '<%= pkg.version %>',
                         Version: '<%= pkg.version %>',
-                        AssemblyVersion: '<%= pkg.version %>'
+                        AssemblyVersion: '<%= pkg.version %>',
+                        inferMsbuildPath: true
                     },
                 },
-                inferMsbuildPath: true
+             
             }
         },
         nugetpush: {
