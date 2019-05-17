@@ -37,6 +37,39 @@ namespace NCDO.CDOMemory
 
         #endregion
 
+        #region Overrides of CDO_Record
+
+        /// <inheritdoc />
+        public override string GetId()
+        {
+            if (!string.IsNullOrEmpty(PrimaryKeyName) && ContainsKey(PrimaryKeyName))
+            {
+                var id = this.Get(PrimaryKeyName).ToString();
+                if (_defaultPrimaryKeyValue == id)
+                {
+                    this[PrimaryKeyName] = id = _id;
+                }
+
+                return id;
+            }
+
+            return base.GetId();
+        }
+
+        private string _defaultPrimaryKeyValue;
+
+        /// <inheritdoc />
+        public override string PrimaryKeyName
+        {
+            set
+            {
+                base.PrimaryKeyName = value;
+                _defaultPrimaryKeyValue = Default(value)?.ToString();
+            }
+        }
+
+        #endregion
+
         public virtual S Default<S>(Expression<Func<T, S>> propertyExpression)
         {
             var property = propertyExpression.Body as UnaryExpression;
@@ -46,6 +79,13 @@ namespace NCDO.CDOMemory
 
             var converter = TypeDescriptor.GetConverter(typeof(S));
             return (S) converter.ConvertFromString(defaultValueAttribute?.Value.ToString());
+        }
+
+        protected virtual object Default(string propertyName)
+        {
+            var propInfo = GetType().GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+            var defaultValueAttribute = propInfo?.GetCustomAttribute<DefaultValueAttribute>();
+            return defaultValueAttribute?.Value;
         }
     }
 
@@ -57,7 +97,7 @@ namespace NCDO.CDOMemory
         /// <summary>
         ///     An internal field for the CDO that is provided to find a given record in its memory.
         /// </summary>
-        private string _id = Guid.NewGuid().ToString();
+        protected string _id = Guid.NewGuid().ToString();
 
         #region Constructor
 
@@ -102,7 +142,9 @@ namespace NCDO.CDOMemory
         }
 
         /// <inheritdoc />
-        public virtual string GetId() => string.IsNullOrEmpty(PrimaryKeyName) || !ContainsKey(PrimaryKeyName) ? _id : this.Get(PrimaryKeyName).ToString();
+        public virtual string GetId() => string.IsNullOrEmpty(PrimaryKeyName) || !ContainsKey(PrimaryKeyName)
+            ? _id
+            : this.Get(PrimaryKeyName).ToString();
 
         public virtual void SetId(string value)
         {
@@ -111,8 +153,7 @@ namespace NCDO.CDOMemory
             else this.Set(PrimaryKeyName, value);
         }
 
-        public string PrimaryKeyName { get; set; }
-
+        public virtual string PrimaryKeyName { get; set; }
 
         /// <inheritdoc />
         public void RejectRowChanges()
