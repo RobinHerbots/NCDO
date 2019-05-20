@@ -417,13 +417,20 @@ namespace NCDO.CDOMemory
         public CDO_Table<T> NegateNewIds()
         {
             var count = -1;
-            if (New != null && New.Count > 1)
+            if (New != null)
             {
-                foreach (T record in New.Values)
+                if (New.Count == 1)
                 {
-                    //Temp-table defined with "like" takes the indices from the table and thus need to be unique
-                    //add a negative generated id
-                    record.SetId((count--).ToString());
+                    New.First().Value.SetId("0");
+                }
+                else if (New.Count > 1)
+                {
+                    foreach (T record in New.Values)
+                    {
+                        //Temp-table defined with "like" takes the indices from the table and thus need to be unique
+                        //add a negative generated id
+                        record.SetId((count--).ToString());
+                    }
                 }
             }
 
