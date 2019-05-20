@@ -33,7 +33,10 @@ namespace NCDO
             Instance = this; //used by cdo when no session object is passed
 
             //init httpclient
-            HttpClient = new HttpClient();
+            HttpClient = new HttpClient(new HttpClientHandler()
+            {
+                AutomaticDecompression = DecompressionMethods.Deflate | DecompressionMethods.GZip
+            });
             //HttpClient = new HttpClient(new HttpClientHandler() { SslProtocols = _options.SslProtocols });  //this is not supported in older frameworks & problematic in Outlook VSTO
             ServicePointManager.SecurityProtocol = Options.SecurityProtocol;
 
@@ -91,6 +94,7 @@ namespace NCDO
                         return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential, userAssertion))
                             .AccessToken;
                     }
+
                 case AuthenticationModel.Bearer_WIA:
                     if (Options.ClientId == null) throw new ArgumentNullException(nameof(Options.ClientId));
                     if (Options.Authority == null) throw new ArgumentNullException(nameof(Options.Authority));
@@ -273,12 +277,13 @@ namespace NCDO
         }
 
         #region Catalog Extensions
+
         /// <summary>
         ///     Verify if the resource is available and return the catalog definition for the catalog
         /// </summary>
         /// <param name="resource"></param>
         /// <returns></returns>
-        public (Service service,Resource resource) VerifyResourceName(string resource)
+        public (Service service, Resource resource) VerifyResourceName(string resource)
         {
             var serviceDefinition = Services.FirstOrDefault(s => s.Resources.Any(r => r.Name.Equals(resource)));
             var resourceDefinition = serviceDefinition?.Resources.FirstOrDefault(r => r.Name.Equals(resource));
@@ -287,9 +292,10 @@ namespace NCDO
             return (serviceDefinition, resourceDefinition);
         }
 
-        public Operation VerifyOperation(string resource, string operation, OperationType operationType = OperationType.Invoke)
+        public Operation VerifyOperation(string resource, string operation,
+            OperationType operationType = OperationType.Invoke)
         {
-            var resourceDefinition = VerifyResourceName(resource).resource;    
+            var resourceDefinition = VerifyResourceName(resource).resource;
             var operationDefinition = resourceDefinition.Operations.FirstOrDefault(o =>
                 o.Type == operationType && (string.IsNullOrEmpty(operation) || o.Name.Equals(operation)));
             if (operationDefinition == null)
@@ -300,23 +306,24 @@ namespace NCDO
         public string DetermineMainTable(string resource)
         {
             var resourceDefinition = VerifyResourceName(resource).resource;
-            
+
             return resourceDefinition.Relations != null && resourceDefinition.Relations.Count > 0
                 ? resourceDefinition.Relations.FirstOrDefault().ParentName
                 : resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties.FirstOrDefault().Key;
         }
 
-        
+
         public string DeterminePrimaryKey(string resource, string tableName)
         {
             var resourceDefinition = VerifyResourceName(resource).resource;
-            
+
             return resourceDefinition.Schema?.Properties.FirstOrDefault().Value.Properties[tableName]
                 .PrimaryKey.FirstOrDefault();
         }
+
         #endregion
-        
-        
+
+
         #region IDisposable Support
 
         ~CDOSession()
