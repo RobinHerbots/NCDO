@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Json;
@@ -196,7 +197,7 @@ namespace NCDO
         {
             return await Get(new QueryRequest() {ABLFilter = filter?.ToABLFIlter()}, cancellationToken);
         }
-        
+
         /// <inheritdoc />
         public async Task<D> Get(QueryRequest request,
             CancellationToken cancellationToken = default(CancellationToken))
@@ -252,7 +253,7 @@ namespace NCDO
         {
             if (TableReference != null)
             {
-                return TableReference?.Cast<R>().ToArray();
+                return Enumerable.ToArray<R>(TableReference);
             }
 
             throw new CDOException(string.Format(Resources.API_InternalError, "GetDate"));
@@ -290,12 +291,7 @@ namespace NCDO
 
         public bool HasData()
         {
-            if (TableReference != null)
-            {
-                return (TableReference?.Cast<R>()).Any();
-            }
-
-            throw new CDOException(string.Format(Resources.API_InternalError, "HasData"));
+            return TableReference?.Count > 0;
         }
 
         public async Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null,
@@ -644,7 +640,6 @@ namespace NCDO
                 }
                 else if (request.Method == HttpMethod.Get && request.CdoMemory)
                 {
-                    //init cdoMemory
                     _cdoMemory.Init(request.Response);
                 }
 
