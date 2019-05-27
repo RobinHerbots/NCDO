@@ -44,9 +44,9 @@ namespace NCDO.CDOMemory
                 {
                     if (!key.StartsWith("prods:"))
                     {
-                        if (value.Get(key) is IEnumerable<JsonObject> tTable)
-                            Add(key, new CDO_Table<CDO_Record>(tTable));
-                        else Add(key, new CDO_Table<CDO_Record>());
+                        if (value.Get(key) is IEnumerable<JsonValue> tTable)
+                            Add<CDO_Record>(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
+                        else Add<CDO_Record>(key, new CDO_Table<CDO_Record>());
                     }
                 }
             }
