@@ -41,19 +41,21 @@ namespace NCDO.CDOMemory
             }
         }
 
-        public CDO_Table(IEnumerable<JsonObject> items) : this(items.Select(i =>
+        public CDO_Table(IEnumerable<JsonObject> items) : this(items as IEnumerable<JsonValue>){
+        }
+
+        public CDO_Table(IEnumerable<JsonValue> items) :  this(items.Select(i =>
         {
             var record = new T();
-            foreach (var keyValuePair in i)
+            foreach (KeyValuePair<string, JsonValue> keyValuePair in i)
             {
-                record.Add(keyValuePair.Key, keyValuePair.Value, false);
+                record.Add( keyValuePair.Key, keyValuePair.Value, false);
             }
 
             return record;
         }))
         {
         }
-
         public override JsonType JsonType => JsonType.Array;
 
         public void Add(T item)
