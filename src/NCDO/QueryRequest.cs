@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Json;
 using System.Linq.Expressions;
+using System.Threading;
 using NCDO.Extensions;
 
 namespace NCDO
@@ -13,6 +14,12 @@ namespace NCDO
             Skip = -1;
         }
 
+        public QueryRequest Filter<R>(Expression<Func<R, bool>> filter)
+        {
+            ABLFilter = filter.ToABLFIlter();
+            return this;
+        } 
+        
         /// <summary>
         ///     Filterstring used to select the records to be returned. These property settings are in the format as the property
         ///     settings in the Kendo UI DataSouce filter property object. For more information, see the filter configuration

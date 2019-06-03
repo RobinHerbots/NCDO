@@ -34,28 +34,27 @@ namespace NCDO.CDOMemory
             foreach (var record in items)
             {
                 record.PropertyChanged += Item_PropertyChanged;
-                if (!_list.ContainsKey(record.GetId()))
-                {
-                    _list.Add(record.GetId(), record);
-                }
+                _list.Add(record.GetId(), record);
             }
         }
 
-        public CDO_Table(IEnumerable<JsonObject> items) : this(items as IEnumerable<JsonValue>){
+        public CDO_Table(IEnumerable<JsonObject> items) : this(items as IEnumerable<JsonValue>)
+        {
         }
 
-        public CDO_Table(IEnumerable<JsonValue> items) :  this(items.Select(i =>
+        public CDO_Table(IEnumerable<JsonValue> items) : this(items.Select(i =>
         {
             var record = new T();
             foreach (KeyValuePair<string, JsonValue> keyValuePair in i)
             {
-                record.Add( keyValuePair.Key, keyValuePair.Value, false);
+                record.Add(keyValuePair.Key, keyValuePair.Value, false);
             }
 
             return record;
         }))
         {
         }
+
         public override JsonType JsonType => JsonType.Array;
 
         public void Add(T item)

@@ -4,8 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
 using System.Json;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -21,14 +19,12 @@ namespace NCDO.CDOMemory
     {
         #region Constructor
 
-        public CDO_Record(params JsonPair[] items)
+        public CDO_Record(params JsonPair[] items): base(items)
         {
-            AddRange(items);
         }
 
-        public CDO_Record(JsonPairEnumerable items)
+        public CDO_Record(JsonPairEnumerable items): base(items)
         {
-            AddRange(items);
         }
 
         public CDO_Record()
@@ -112,7 +108,6 @@ namespace NCDO.CDOMemory
         public CDO_Record()
         {
         }
-
         #endregion
 
         //redefine is needed to allow override by generic CDO_Record

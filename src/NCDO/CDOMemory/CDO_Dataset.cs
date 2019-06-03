@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Json;
 using System.Linq;
+using System.Threading.Tasks;
 using NCDO.Definitions;
 using NCDO.Extensions;
 
@@ -35,20 +36,27 @@ namespace NCDO.CDOMemory
             ImportTables(ds?.Value);
         }
 
-        protected internal virtual void ImportTables(JsonValue value)
+        protected virtual void ImportTables(JsonValue value)
         {
             //Import tables
             if (value != null)
             {
+                var taskList = new List<Task>();
                 foreach (var key in ((JsonObject)value).Keys)
                 {
                     if (!key.StartsWith("prods:"))
                     {
-                        if (value.Get(key) is IEnumerable<JsonValue> tTable)
-                            Add<CDO_Record>(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
-                        else Add<CDO_Record>(key, new CDO_Table<CDO_Record>());
+                        
+                        taskList.Add(Task.Factory.StartNew(() =>
+                        {
+                            if (value.Get(key) is IEnumerable<JsonValue> tTable)
+                                Add<CDO_Record>(key, new CDO_Table<CDO_Record>(tTable.Cast<JsonObject>()));
+                            else Add<CDO_Record>(key, new CDO_Table<CDO_Record>());
+                        }));
                     }
                 }
+
+                Task.WaitAll(taskList.ToArray());
             }
         }
 
