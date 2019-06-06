@@ -12,6 +12,7 @@ namespace NCDO
         {
             Top = Int32.MaxValue;
             Skip = -1;
+            Children = true;
         }
 
         public QueryRequest Filter<R>(Expression<Func<R, bool>> filter)
@@ -79,6 +80,22 @@ namespace NCDO
             get => this.Get("top");
             set => this["top"] = value;
         }
+        
+        /// <summary>
+        /// Custom capability - for READ operation.  Only fetch the main table without the children.
+        /// Set to false to not include the relations/childs
+        /// </summary>
+        public bool Children
+        {
+            get => this.Get("children");
+            set => this["children"] = value;
+        }
+        
+        public string SQLQuery
+        {
+            get => this.Get("sqlQuery");
+            set => this["sqlQuery"] = value;
+        }
 
         #region Overrides of JsonValue
 
@@ -101,7 +118,7 @@ namespace NCDO
             if (!string.IsNullOrEmpty(ABLFilter) &&
                 capabilities.IndexOf("ablFilter", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("ablFilter", ABLFilter);
-            if (!string.IsNullOrEmpty(null) &&
+            if (!string.IsNullOrEmpty(SQLQuery) &&
                 capabilities.IndexOf("sqlQuery", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("sqlQuery", "");
             if (!string.IsNullOrEmpty(Sort) &&
@@ -111,6 +128,8 @@ namespace NCDO
                 filter.Add("skip", Skip);
             if (default(int) != Top && capabilities.IndexOf("top", StringComparison.InvariantCultureIgnoreCase) != -1)
                 filter.Add("top", Top);
+            if (true != Children && capabilities.IndexOf("children", StringComparison.InvariantCultureIgnoreCase) != -1)
+                filter.Add("children", Children);
 
             return filter.ToString();
         }
