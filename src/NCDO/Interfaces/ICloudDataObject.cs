@@ -94,7 +94,8 @@ namespace NCDO.Interfaces
         ///     ProDataSet, as returned by the built-in read operation of the
         ///     resource for which the CDO is created.
         /// </summary>
-        Task<ICDORequest> Fill(QueryRequest queryRequest = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ICDORequest> Fill(QueryRequest queryRequest = null,
+            CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         ///     Initializes CDO memory with record objects from the data
@@ -157,7 +158,8 @@ namespace NCDO.Interfaces
         ///     CDO to execute an Invoke operation defined by a Data
         ///     Object resource.
         /// </summary>
-        Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null,
+            CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         ///     Initializes CDO memory with record objects from the data
@@ -165,7 +167,8 @@ namespace NCDO.Interfaces
         ///     ProDataSet, as returned by the built-in read operation of the
         ///     resource for which the CDO is created.
         /// </summary>
-        Task<ICDORequest> Read(QueryRequest queryRequest = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ICDORequest> Read(QueryRequest queryRequest = null,
+            CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         ///     Initializes CDO memory with record objects from the data
@@ -226,7 +229,8 @@ namespace NCDO.Interfaces
         void Sort();
 
 
-        Task ProcessResponse(HttpResponseMessage response, CDORequest request, CancellationToken cancellationToken = default(CancellationToken));
+        Task ProcessResponse(HttpResponseMessage response, CDORequest request,
+            CancellationToken cancellationToken = default(CancellationToken));
 
         #endregion
     }
@@ -273,7 +277,8 @@ namespace NCDO.Interfaces
         ///     ProDataSet, as returned by the built-in read operation of the
         ///     resource for which the CDO is created.
         /// </summary>
-        Task<ICDORequest> Fill(Expression<Func<R, bool>> filter, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ICDORequest> Fill(Expression<Func<R, bool>> filter,
+            CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         ///     Searches for a record in a table referenced in CDO memory
@@ -281,7 +286,8 @@ namespace NCDO.Interfaces
         ///     is found, it returns null.
         /// </summary>
         /// <returns></returns>
-        Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch, CancellationToken cancellationToken = default(CancellationToken));
+        Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch, bool children,
+            CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         ///     Searches for a record in a table
@@ -312,7 +318,8 @@ namespace NCDO.Interfaces
         ///     ProDataSet, as returned by the built-in read operation of the
         ///     resource for which the CDO is created.
         /// </summary>
-        Task<ICDORequest> Read(Expression<Func<R, bool>> filter, CancellationToken cancellationToken = default(CancellationToken));
+        Task<ICDORequest> Read(Expression<Func<R, bool>> filter,
+            CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
         ///     Deletes the specified table record referenced in CDO
@@ -331,7 +338,8 @@ namespace NCDO.Interfaces
         ///     saveChanges( ) methods, or since any prior changes
         ///     have been otherwise accepted or rejected.
         /// </summary>
-        Task SaveChanges(CDO_Table<R> tableRef = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task SaveChanges(CDO_Table<R> tableRef = null,
+            CancellationToken cancellationToken = default(CancellationToken));
 
         #endregion
 
