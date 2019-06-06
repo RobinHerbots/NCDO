@@ -286,7 +286,7 @@ namespace NCDO.Interfaces
         ///     is found, it returns null.
         /// </summary>
         /// <returns></returns>
-        Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch, bool children,
+        Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch,
             CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>

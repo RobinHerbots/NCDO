@@ -173,7 +173,7 @@ namespace NCDO
         }
 
         /// <inheritdoc />
-        public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false, bool children = true,
+        public async Task<R> Find(Expression<Func<R, bool>> filter, bool autoFetch = false,
             CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -184,7 +184,7 @@ namespace NCDO
 
             if (record == null && autoFetch)
             {
-                await Fill(new QueryRequest(){Children = children}.Filter(filter), cancellationToken);
+                await Fill(new QueryRequest(){Children = false}.Filter(filter), cancellationToken);
                 return await Find(filter, cancellationToken: cancellationToken);
             }
 
