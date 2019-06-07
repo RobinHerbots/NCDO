@@ -125,9 +125,9 @@ The options UserAccessToken and UserName are of type Func<string>, allowing to d
 - CDOSession.ChallengeToken
     Returns the authentication token for the given authentication model
     
-- Custom capability
-     Custom capability - for READ operation.  Only fetch the main table without the children.
-     Set to false to not include the relations/childs
+- Custom capability for READ operation.  
+    Only fetch the main table without the children.
+    Set to false to not include the relations/childs
     
 ### Remarks
     
