@@ -206,42 +206,17 @@ namespace NCDO.CDOMemory
             }
         }
 
-        public override void Save(Stream stream)
+        #region Overrides of JsonValue
+
+        /// <inheritdoc />
+        #endregion
+
+        public override void Save(TextWriter textWriter)
         {
             lock (_list)
             {
-                if (stream == null)
-                    throw new ArgumentNullException(nameof(stream));
-
-                stream.WriteByte((byte) '[');
-
-
-                var listEnum = _list.GetEnumerator();
-                var next = listEnum.MoveNext();
-                while (next)
-                {
-                    JsonValue v = listEnum.Current.Value;
-                    if (v != null)
-                    {
-                        v.Save(stream);
-                    }
-                    else
-                    {
-                        stream.WriteByte((byte) 'n');
-                        stream.WriteByte((byte) 'u');
-                        stream.WriteByte((byte) 'l');
-                        stream.WriteByte((byte) 'l');
-                    }
-
-                    next = listEnum.MoveNext();
-                    if (next)
-                    {
-                        stream.WriteByte((byte) ',');
-                        stream.WriteByte((byte) ' ');
-                    }
-
-                    stream.WriteByte((byte) ']');
-                }
+                NegateNewIds().RenumberNegativeIds();
+                base.Save(textWriter);
             }
         }
 
