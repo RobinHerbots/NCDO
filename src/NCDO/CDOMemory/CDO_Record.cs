@@ -43,7 +43,7 @@ namespace NCDO.CDOMemory
                 var id = this.Get(PrimaryKeyName).ToString();
                 if (_defaultPrimaryKeyValue == id)
                 {
-                    this[PrimaryKeyName] = id = _id;
+                    return _id;
                 }
 
                 return id;
