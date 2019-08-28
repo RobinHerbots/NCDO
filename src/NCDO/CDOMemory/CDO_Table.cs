@@ -390,7 +390,7 @@ namespace NCDO.CDOMemory
         /// When submitting a dataset to the PAS the ID should be unique to be valid for progress.  Negating to mark new records.
         /// </summary>
         /// <returns></returns>
-        public CDO_Table<T> NegateNewIds()
+        internal CDO_Table<T> NegateNewIds()
         {
             var count = -1;
             if (New != null)
@@ -413,7 +413,7 @@ namespace NCDO.CDOMemory
             return this;
         }
 
-        public CDO_Table<T> RenumberNegativeIds()
+        internal CDO_Table<T> RenumberNegativeIds()
         {
             var count = -1;
             if (Count > 0)

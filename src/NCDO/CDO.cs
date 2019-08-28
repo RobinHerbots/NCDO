@@ -413,7 +413,7 @@ namespace NCDO
             try
             {
                 if (tableRef == null) tableRef = TableReference;
-                tableRef.NegateNewIds();
+                tableRef.NegateNewIds().RenumberNegativeIds();
                 BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> {CDO = this, Request = null});
 
                 Operation operation = null;
