@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Json;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,15 +14,32 @@ namespace NCDO.CDOMemory
     /// </summary>
     public partial class CDO_Dataset : JsonObject
     {
-
         #region Constructor
+
         public CDO_Dataset()
         {
         }
+
         public CDO_Dataset(IEnumerable<KeyValuePair<string, JsonValue>> items)
         {
             Init(items);
         }
+
+        #endregion
+
+        #region Overrides of JsonObject
+
+        /// <inheritdoc />
+        public override void Save(TextWriter textWriter)
+        {
+            foreach (var key in Keys)
+            {
+                if (this.Get(key) is JsonValue tTable)
+                    tTable.ToString();
+            }
+            base.Save(textWriter);
+        }
+
         #endregion
 
         internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items = null)
@@ -33,6 +51,7 @@ namespace NCDO.CDOMemory
                 Before = ds?.Value.Get("prods:before") as JsonObject;
                 HasChanges = ds?.Value.Get("prods:hasChanges");
             }
+
             ImportTables(ds?.Value);
         }
 
@@ -42,11 +61,10 @@ namespace NCDO.CDOMemory
             if (value != null)
             {
                 var taskList = new List<Task>();
-                foreach (var key in ((JsonObject)value).Keys)
+                foreach (var key in ((JsonObject) value).Keys)
                 {
                     if (!key.StartsWith("prods:"))
                     {
-                        
                         taskList.Add(Task.Factory.StartNew(() =>
                         {
                             if (value.Get(key) is IEnumerable<JsonValue> tTable)
@@ -65,7 +83,7 @@ namespace NCDO.CDOMemory
             if (!ContainsKey(key)) base.Add(key, value);
             else
             {
-                var table = (CDO_Table<R>)this[key];
+                var table = (CDO_Table<R>) this[key];
                 table.AddRange(value, MergeMode.Replace, false);
             }
         }

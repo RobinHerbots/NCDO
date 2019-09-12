@@ -94,7 +94,10 @@ namespace NCDO.CDOMemory
                     item.PropertyChanged -= Item_PropertyChanged;
                     item.PropertyChanged += Item_PropertyChanged;
                     if (notify)
-                        OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] {item});
+                    {
+                        var isNew = !Int32.TryParse(item.GetId(), out int id) || id <= 0;
+                        OnCollectionChanged(isNew ? NotifyCollectionChangedAction.Add: NotifyCollectionChangedAction.Move, new[] {item});
+                    }
                 }
                 else
                 {
@@ -209,6 +212,7 @@ namespace NCDO.CDOMemory
         #region Overrides of JsonValue
 
         /// <inheritdoc />
+
         #endregion
 
         public override void Save(TextWriter textWriter)

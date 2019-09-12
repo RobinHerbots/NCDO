@@ -299,6 +299,13 @@ namespace NCDO
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+
+            foreach (var key in inputObject?.Keys) //enforce internalsaving
+            {
+                if (inputObject.Get(key) is JsonValue tTable)
+                    tTable.ToString();
+            }
+            
             var operationDefinition = _cDOSession.VerifyOperation(Name, operation);
             //init request if needed
             var cDORequest = new CDORequest
