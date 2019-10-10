@@ -296,7 +296,7 @@ namespace NCDO
             OperationType operationType = OperationType.Invoke)
         {
             var resourceDefinition = VerifyResourceName(resource).resource;
-            var operationDefinition = resourceDefinition.Operations.FirstOrDefault(o =>
+            var operationDefinition = resourceDefinition?.Operations.FirstOrDefault(o =>
                 o.Type == operationType && (string.IsNullOrEmpty(operation) || o.Name.Equals(operation)));
             if (operationDefinition == null)
                 throw new NotSupportedException($"Invalid {operationType} operation {operation}.");
