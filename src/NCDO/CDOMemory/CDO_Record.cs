@@ -252,5 +252,11 @@ namespace NCDO.CDOMemory
         public override int GetHashCode() => (GetId() != null ? GetId().GetHashCode() : 0);
 
         #endregion
+        
+        #region Status
+
+        public bool IsNew => !Int32.TryParse(GetId(), out int id) || id <= 0;
+
+        #endregion
     }
 }
