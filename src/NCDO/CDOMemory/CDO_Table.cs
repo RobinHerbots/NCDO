@@ -13,10 +13,10 @@ using NCDO.Interfaces;
 
 namespace NCDO.CDOMemory
 {
-    public partial class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking
+    public partial class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking, INormalize
         where T : CDO_Record, new()
     {
-        protected Dictionary<string, T> _list;
+        internal Dictionary<string, T> _list;
         internal Dictionary<string, T> _new = new Dictionary<string, T>();
         internal Dictionary<string, T> _changed = new Dictionary<string, T>();
         internal Dictionary<string, T> _deleted = new Dictionary<string, T>();
@@ -95,9 +95,8 @@ namespace NCDO.CDOMemory
                     item.PropertyChanged += Item_PropertyChanged;
                     if (notify)
                     {
-                        var isNew = !Int32.TryParse(item.GetId(), out int id) || id <= 0;
                         OnCollectionChanged(
-                            isNew ? NotifyCollectionChangedAction.Add : NotifyCollectionChangedAction.Move,
+                           item.IsNew ? NotifyCollectionChangedAction.Add : NotifyCollectionChangedAction.Move,
                             new[] {item});
                     }
                 }
@@ -208,21 +207,6 @@ namespace NCDO.CDOMemory
             foreach (var item in items)
             {
                 _internalAdd(item, mergeMode, notify);
-            }
-        }
-
-        #region Overrides of JsonValue
-
-        /// <inheritdoc />
-
-        #endregion
-
-        public override void Save(TextWriter textWriter)
-        {
-            lock (_list)
-            {
-                NegateNewIds().RenumberNegativeIds();
-                base.Save(textWriter);
             }
         }
 
@@ -403,7 +387,7 @@ namespace NCDO.CDOMemory
             {
                 if (New.Count == 1)
                 {
-                    New.First().Value.SetId("0");
+                    New.First().Value.SetId(0);
                 }
                 else if (New.Count > 1)
                 {
@@ -411,7 +395,7 @@ namespace NCDO.CDOMemory
                     {
                         //Temp-table defined with "like" takes the indices from the table and thus need to be unique
                         //add a negative generated id
-                        record.SetId((count--).ToString());
+                        record.SetId(count--);
                     }
                 }
             }
@@ -428,7 +412,7 @@ namespace NCDO.CDOMemory
                 {
                     //Temp-table defined with "like" takes the indices from the table and thus need to be unique
                     //add a negative generated id
-                    record.Value.SetId((count--).ToString());
+                    record.Value.SetId(count--);
                 }
             }
 
@@ -450,6 +434,16 @@ namespace NCDO.CDOMemory
             }
 
             return this;
+        }
+
+        #endregion
+
+        #region Implementation of INormalize
+
+        /// <inheritdoc />
+        public void Normalize()
+        {
+            NegateNewIds().RenumberNegativeIds();
         }
 
         #endregion

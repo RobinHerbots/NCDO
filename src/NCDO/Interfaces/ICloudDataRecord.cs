@@ -48,7 +48,7 @@ namespace NCDO.Interfaces
         /// Set the primary key value for id negation etc 
         /// </summary>
         /// <param name="value"></param>
-        void SetId(string value);
+        void SetId(JsonValue value);
         /// <summary>
         /// Define which property is the primary key for the generic CDO_Record
         /// </summary>

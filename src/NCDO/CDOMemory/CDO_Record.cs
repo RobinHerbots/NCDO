@@ -138,7 +138,7 @@ namespace NCDO.CDOMemory
             ? _id
             : this.Get(PrimaryKeyName).ToString();
 
-        public virtual void SetId(string value)
+        public virtual void SetId(JsonValue value)
         {
             if (string.IsNullOrEmpty(PrimaryKeyName))
                 _id = value;

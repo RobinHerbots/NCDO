@@ -6,13 +6,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using NCDO.Definitions;
 using NCDO.Extensions;
+using NCDO.Interfaces;
 
 namespace NCDO.CDOMemory
 {
     /// <summary>
     /// CDO in memory implementation (Dataset)
     /// </summary>
-    public partial class CDO_Dataset : JsonObject
+    public partial class CDO_Dataset : JsonObject, INormalize
     {
         #region Constructor
 
@@ -27,22 +28,7 @@ namespace NCDO.CDOMemory
 
         #endregion
 
-        #region Overrides of JsonObject
-
-        /// <inheritdoc />
-        public override void Save(TextWriter textWriter)
-        {
-            foreach (var key in Keys)
-            {
-                if (this.Get(key) is JsonValue tTable)
-                    tTable.ToString();
-            }
-            base.Save(textWriter);
-        }
-
-        #endregion
-
-        internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items = null)
+         internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items = null)
         {
             var ds = items?.FirstOrDefault();
             if (!string.IsNullOrEmpty(ds?.Key))
@@ -102,5 +88,19 @@ namespace NCDO.CDOMemory
         /// Dataset name
         /// </summary>
         public String Name { get; private set; }
+
+        #region Implementation of INormalize
+
+        /// <inheritdoc />
+        public void Normalize()
+        {
+            foreach (var key in Keys)
+            {
+                if (this.Get(key) is INormalize normalize)
+                    normalize.Normalize();
+            }
+        }
+
+        #endregion
     }
 }

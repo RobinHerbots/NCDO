@@ -302,8 +302,8 @@ namespace NCDO
 
             foreach (var key in inputObject?.Keys) //enforce internalsaving
             {
-                if (inputObject.Get(key) is JsonValue tTable)
-                    tTable.ToString();
+                if (inputObject.Get(key) is INormalize normalize)
+                    normalize.Normalize();
             }
             
             var operationDefinition = _cDOSession.VerifyOperation(Name, operation);
