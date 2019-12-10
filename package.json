@@ -1,6 +1,6 @@
 {
   "name": "ncdo",
-  "version": "1.0.147",
+  "version": "1.0.148",
   "description": ".NET Implementation of the CloudDataObject (CDO) used by Progress OpenEdge.",
   "main": "index.js",
   "dependencies": {},
