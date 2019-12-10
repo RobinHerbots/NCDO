@@ -141,7 +141,7 @@ namespace NCDO.CDOMemory
         public virtual void SetId(JsonValue value)
         {
             if (string.IsNullOrEmpty(PrimaryKeyName))
-                _id = value;
+                _id = value.AsString();
             else this.Set(PrimaryKeyName, value);
         }
 
