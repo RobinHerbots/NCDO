@@ -408,7 +408,7 @@ namespace NCDO.CDOMemory
             var count = -1;
             if (Count > 0)
             {
-                foreach (var record in _list.Where(i => i.Key.StartsWith("-") || i.Value.IsNew))
+                foreach (var record in _list.Where(i => i.Key.StartsWith("-") || (New.Count > 1 && i.Value.IsNew)))
                 {
                     //Temp-table defined with "like" takes the indices from the table and thus need to be unique
                     //add a negative generated id
