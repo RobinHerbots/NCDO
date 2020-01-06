@@ -420,9 +420,7 @@ namespace NCDO
             try
             {
                 if (tableRef == null) tableRef = TableReference;
-                tableRef.NegateNewIds().RenumberNegativeIds();
                 BeforeSaveChanges?.Invoke(this, new CDOEventArgs<T, D, R> {CDO = this, Request = null});
-
                 Operation operation = null;
                 //delete
                 if (tableRef._deleted.Any())
@@ -449,6 +447,7 @@ namespace NCDO
                 //create
                 if (tableRef._new.Any())
                 {
+                    tableRef.NegateNewIds();
                     operation = _cDOSession.VerifyOperation(Name, null, OperationType.Create);
                     var createRequest = new CDORequest
                     {
@@ -471,6 +470,7 @@ namespace NCDO
                 //update
                 if (tableRef._changed.Any())
                 {
+                    tableRef.RenumberNegativeIds();
                     operation = _cDOSession.VerifyOperation(Name, null, OperationType.Update);
                     var updateRequest = new CDORequest
                     {

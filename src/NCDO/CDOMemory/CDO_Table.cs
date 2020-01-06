@@ -96,7 +96,7 @@ namespace NCDO.CDOMemory
                     if (notify)
                     {
                         OnCollectionChanged(
-                           item.IsNew ? NotifyCollectionChangedAction.Add : NotifyCollectionChangedAction.Move,
+                            item.IsNew ? NotifyCollectionChangedAction.Add : NotifyCollectionChangedAction.Move,
                             new[] {item});
                     }
                 }
@@ -382,7 +382,6 @@ namespace NCDO.CDOMemory
         /// <returns></returns>
         internal CDO_Table<T> NegateNewIds()
         {
-            var count = -1;
             if (New != null)
             {
                 if (New.Count == 1)
@@ -391,11 +390,12 @@ namespace NCDO.CDOMemory
                 }
                 else if (New.Count > 1)
                 {
+                    var count = New.Count * -1;
                     foreach (T record in New.Values)
                     {
                         //Temp-table defined with "like" takes the indices from the table and thus need to be unique
                         //add a negative generated id
-                        record.SetId(count--);
+                        record.SetId(count++);
                     }
                 }
             }
@@ -405,9 +405,9 @@ namespace NCDO.CDOMemory
 
         internal CDO_Table<T> RenumberNegativeIds()
         {
-            var count = -1;
             if (Count > 0)
             {
+                var count = -1;
                 foreach (var record in _list.Where(i => i.Key.StartsWith("-") || (New.Count > 1 && i.Value.IsNew)))
                 {
                     //Temp-table defined with "like" takes the indices from the table and thus need to be unique
