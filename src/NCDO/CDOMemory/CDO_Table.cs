@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Json;
 using System.Linq;
@@ -13,7 +14,8 @@ using NCDO.Interfaces;
 
 namespace NCDO.CDOMemory
 {
-    public partial class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking, INormalize
+    public partial class CDO_Table<T> : JsonArray, IList<T>, INotifyCollectionChanged, IChangeTracking, INormalize,
+        IValidatableObject
         where T : CDO_Record, new()
     {
         internal Dictionary<string, T> _list;
@@ -444,6 +446,22 @@ namespace NCDO.CDOMemory
         public void Normalize()
         {
             NegateNewIds().RenumberNegativeIds();
+        }
+
+        #endregion
+
+        #region Implementation of IValidatableObject
+
+        /// <inheritdoc />
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            var results = new List<ValidationResult>();
+            foreach (var listValue in _list.Values)
+            {
+                Validator.TryValidateObject(listValue, new ValidationContext(listValue, null, null), results);
+            }
+
+            return results;
         }
 
         #endregion

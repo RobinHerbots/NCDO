@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Json;
 using System.Linq;
@@ -184,7 +185,7 @@ namespace NCDO
 
             if (record == null && autoFetch)
             {
-                await Fill(new QueryRequest(){Children = false}.Filter(filter), cancellationToken);
+                await Fill(new QueryRequest() {Children = false}.Filter(filter), cancellationToken);
                 return await Find(filter, cancellationToken: cancellationToken);
             }
 
@@ -305,7 +306,7 @@ namespace NCDO
                 if (inputObject.Get(key) is INormalize normalize)
                     normalize.Normalize();
             }
-            
+
             var operationDefinition = _cDOSession.VerifyOperation(Name, operation);
             //init request if needed
             var cDORequest = new CDORequest
@@ -547,6 +548,21 @@ namespace NCDO
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
+
+            if (cDORequest.Method != HttpMethod.Get)
+            {
+                var args =(JsonObject) cDORequest.ObjParam.Get("request");
+                foreach (var jsonValue in args.Values)
+                {
+                    var results = new List<ValidationResult>();
+                    var context = new ValidationContext(jsonValue, null, null);
+                    if (!Validator.TryValidateObject(jsonValue, context, results, true))
+                    {
+                        throw new CDOException("ModelValidation",
+                            string.Join(", ", results.Select(r => r.ErrorMessage)));
+                    }
+                }
+            }
 
             if (_cDOSession.LoginResult != SessionStatus.AUTHENTICATION_SUCCESS &&
                 _cDOSession.Options.AuthenticationModel == AuthenticationModel.Bearer_OnBehalf)

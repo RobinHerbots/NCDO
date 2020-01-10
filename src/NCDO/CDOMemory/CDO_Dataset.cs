@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Json;
 using System.Linq;
@@ -13,7 +14,7 @@ namespace NCDO.CDOMemory
     /// <summary>
     /// CDO in memory implementation (Dataset)
     /// </summary>
-    public partial class CDO_Dataset : JsonObject, INormalize
+    public partial class CDO_Dataset : JsonObject, INormalize, IValidatableObject
     {
         #region Constructor
 
@@ -28,7 +29,7 @@ namespace NCDO.CDOMemory
 
         #endregion
 
-         internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items = null)
+        internal void Init(IEnumerable<KeyValuePair<string, JsonValue>> items = null)
         {
             var ds = items?.FirstOrDefault();
             if (!string.IsNullOrEmpty(ds?.Key))
@@ -99,6 +100,25 @@ namespace NCDO.CDOMemory
                 if (this.Get(key) is INormalize normalize)
                     normalize.Normalize();
             }
+        }
+
+        #endregion
+
+        #region Implementation of IValidatableObject
+
+        /// <inheritdoc />
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            var results = new List<ValidationResult>();
+
+            foreach (var key in Keys)
+            {
+                if (this.Get(key) is IValidatableObject validatableObject)
+                    Validator.TryValidateObject(validatableObject, new ValidationContext(validatableObject, null, null),
+                        results);
+            }
+
+            return results;
         }
 
         #endregion
