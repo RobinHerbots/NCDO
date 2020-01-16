@@ -551,15 +551,18 @@ namespace NCDO
 
             if (cDORequest.Method != HttpMethod.Get)
             {
-                var args =(JsonObject) cDORequest.ObjParam.Get("request");
-                foreach (var jsonValue in args.Values)
+                var args = cDORequest.ObjParam.Get("request") as JsonObject ?? cDORequest.ObjParam as JsonObject;
+                if (args != null)
                 {
-                    var results = new List<ValidationResult>();
-                    var context = new ValidationContext(jsonValue, null, null);
-                    if (!Validator.TryValidateObject(jsonValue, context, results, true))
+                    foreach (var jsonValue in args.Values)
                     {
-                        throw new CDOException("ModelValidation",
-                            string.Join(", ", results.Select(r => r.ErrorMessage)));
+                        var results = new List<ValidationResult>();
+                        var context = new ValidationContext(jsonValue, null, null);
+                        if (!Validator.TryValidateObject(jsonValue, context, results, true))
+                        {
+                            throw new CDOException("ModelValidation",
+                                string.Join(", ", results.Select(r => r.ErrorMessage)));
+                        }
                     }
                 }
             }
@@ -671,7 +674,7 @@ namespace NCDO
 
         #endregion
 
-        #region private 
+        #region private
 
         private void InitCDO(bool autoFill, CancellationToken cancellationToken = default(CancellationToken))
         {
