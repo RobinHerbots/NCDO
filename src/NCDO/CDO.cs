@@ -557,12 +557,15 @@ namespace NCDO
                 {
                     foreach (var jsonValue in args.Values)
                     {
-                        var results = new List<ValidationResult>();
-                        var context = new ValidationContext(jsonValue, null, null);
-                        if (!Validator.TryValidateObject(jsonValue, context, results, true))
+                        if (jsonValue != null)
                         {
-                            throw new CDOException("ModelValidation",
-                                string.Join(", ", results.Select(r => r.ErrorMessage)));
+                            var results = new List<ValidationResult>();
+                            var context = new ValidationContext(jsonValue, null, null);
+                            if (!Validator.TryValidateObject(jsonValue, context, results, true))
+                            {
+                                throw new CDOException("ModelValidation",
+                                    string.Join(", ", results.Select(r => r.ErrorMessage)));
+                            }
                         }
                     }
                 }
