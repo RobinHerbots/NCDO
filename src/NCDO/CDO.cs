@@ -549,7 +549,8 @@ namespace NCDO
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
-            if (cDORequest.Method != HttpMethod.Get)
+            //modelvalidation
+            if (cDORequest.Method == HttpMethod.Post || cDORequest.Method == HttpMethod.Put)
             {
                 var args = cDORequest.ObjParam.Get("request") as JsonObject ?? cDORequest.ObjParam as JsonObject;
                 if (args != null)
