@@ -309,3 +309,5 @@ src/.vs/
 /src/UserManServiceClient
 [Bb]uild
 *.sln
+
+package-lock.json

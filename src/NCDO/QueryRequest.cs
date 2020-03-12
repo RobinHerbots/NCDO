@@ -19,8 +19,8 @@ namespace NCDO
         {
             ABLFilter = filter.ToABLFIlter();
             return this;
-        } 
-        
+        }
+
         /// <summary>
         ///     Filterstring used to select the records to be returned. These property settings are in the format as the property
         ///     settings in the Kendo UI DataSouce filter property object. For more information, see the filter configuration
@@ -80,7 +80,7 @@ namespace NCDO
             get => this.Get("top");
             set => this["top"] = value;
         }
-        
+
         /// <summary>
         /// Custom capability - for READ operation.  Only fetch the main table without the children.
         /// Set to false to not include the relations/childs
@@ -90,7 +90,7 @@ namespace NCDO
             get => this.Get("children");
             set => this["children"] = value;
         }
-        
+
         public string SQLQuery
         {
             get => this.Get("sqlQuery");
@@ -105,9 +105,9 @@ namespace NCDO
             return ToString(null);
         }
 
-        public string ToString(string capabilities)
+        public string ToString(string capabilities, bool isInvoke = false)
         {
-            if (string.IsNullOrEmpty(capabilities))
+            if (string.IsNullOrEmpty(capabilities) && !isInvoke)
                 return string.IsNullOrEmpty(ABLFilter) ? "" : ABLFilter.Trim('"');
 
             if (!string.IsNullOrEmpty(ID) &&

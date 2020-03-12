@@ -295,19 +295,28 @@ namespace NCDO
             return TableReference?.Count > 0;
         }
 
-        public async Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null,
-            CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null, 
+            CancellationToken cancellationToken = default(CancellationToken), QueryRequest queryRequest = null)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
 
+            //setup filter for get request
+            var operationDefinition = _cDOSession.VerifyOperation(Name, operation);
+            var filter = queryRequest?.ToString(_catalogDefinition.resource.Operations
+                .FirstOrDefault(o => o.Type == OperationType.Invoke && o.Name.Equals(operation, StringComparison.InvariantCultureIgnoreCase))?.Capabilities, true);
+            var filterpath = string.IsNullOrEmpty(filter)
+                ? ""
+                : operationDefinition.Path.ToString().Replace("{filter}", WebUtility.UrlEncode(filter));
+            
+            
             foreach (var key in inputObject?.Keys) //enforce internalsaving
             {
                 if (inputObject.Get(key) is INormalize normalize)
                     normalize.Normalize();
             }
 
-            var operationDefinition = _cDOSession.VerifyOperation(Name, operation);
+            
             //init request if needed
             var cDORequest = new CDORequest
             {
@@ -319,7 +328,7 @@ namespace NCDO
                     : inputObject,
                 RequestUri =
                     new Uri(
-                        $"{_cDOSession.ServiceURI.AbsoluteUri}{_catalogDefinition.service.Address}{_catalogDefinition.resource.Path}{operationDefinition.Path}",
+                        $"{_cDOSession.ServiceURI.AbsoluteUri}{_catalogDefinition.service.Address}{_catalogDefinition.resource.Path}{operationDefinition.Path}{filterpath}",
                         UriKind.Absolute),
                 Method = new HttpMethod(operationDefinition.Verb.ToString().ToUpper())
             };

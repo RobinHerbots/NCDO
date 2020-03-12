@@ -159,7 +159,7 @@ namespace NCDO.Interfaces
         ///     Object resource.
         /// </summary>
         Task<ICDORequest> Invoke(string operation, JsonObject inputObject = null,
-            CancellationToken cancellationToken = default(CancellationToken));
+            CancellationToken cancellationToken = default(CancellationToken), QueryRequest queryRequest = null);
 
         /// <summary>
         ///     Initializes CDO memory with record objects from the data
