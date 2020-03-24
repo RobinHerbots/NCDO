@@ -46,6 +46,7 @@ namespace NCDO
             HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             Task.Factory.StartNew(() =>
                 NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged).Wait();
+            
         }
 
         #endregion
@@ -179,7 +180,6 @@ namespace NCDO
         public virtual async Task ProcessLoginResponse(HttpResponseMessage response)
 #pragma warning restore 1998
         {
-            Connected = true;
             LoginHttpStatus = response.StatusCode;
         }
 
@@ -203,7 +203,6 @@ namespace NCDO
 
         private void NetworkChange_NetworkAvailabilityChanged(object sender, NetworkAvailabilityEventArgs e)
         {
-            Connected = e.IsAvailable;
             if (e.IsAvailable)
             {
                 Login().Wait();
@@ -223,7 +222,8 @@ namespace NCDO
         public ICollection<Uri> CatalogURIs { get; } = new List<Uri>();
         public string ClientContextId { get; set; }
         public ICloudDataObject[] CDOs { get; set; }
-        public bool Connected { get; private set; } = false;
+
+        public bool Connected => NetworkInterface.GetIsNetworkAvailable();
 
         public HttpStatusCode LoginHttpStatus { get; private set; } = HttpStatusCode.Ambiguous;
 
