@@ -46,7 +46,6 @@ namespace NCDO
             HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             Task.Factory.StartNew(() =>
                 NetworkChange.NetworkAvailabilityChanged += NetworkChange_NetworkAvailabilityChanged).Wait();
-            
         }
 
         #endregion
@@ -86,15 +85,20 @@ namespace NCDO
                     _authContext = new AuthenticationContext(Options.Authority, _tokenCache);
                     var clientCredential = new ClientCredential(Options.ClientId, Options.ClientSecret);
 
-                    if (AuthenticationModel == AuthenticationModel.Bearer)
-                        return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential)).AccessToken;
-                    else
+                    if (AuthenticationModel == AuthenticationModel.Bearer_OnBehalf)
                     {
-                        UserAssertion userAssertion = new UserAssertion(Options.UserAccessToken.Invoke(),
-                            "urn:ietf:params:oauth:grant-type:jwt-bearer", Options.UserName.Invoke());
-                        return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential, userAssertion))
-                            .AccessToken;
+                        var tokenAssertion = Options.UserAccessToken.Invoke();
+                        if (tokenAssertion != null)
+                        {
+                            UserAssertion userAssertion = new UserAssertion(tokenAssertion,
+                                "urn:ietf:params:oauth:grant-type:jwt-bearer", Options.UserName.Invoke());
+                            return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential,
+                                    userAssertion))
+                                .AccessToken;
+                        }
                     }
+
+                    return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential)).AccessToken;
 
                 case AuthenticationModel.Bearer_WIA:
                     if (Options.ClientId == null) throw new ArgumentNullException(nameof(Options.ClientId));
