@@ -91,11 +91,18 @@ namespace NCDO
                         var userName = Options.UserName.Invoke();
                         if (tokenAssertion != null && userName != null)
                         {
-                            UserAssertion userAssertion = new UserAssertion(tokenAssertion,
-                                "urn:ietf:params:oauth:grant-type:jwt-bearer", Options.UserName.Invoke());
-                            return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential,
-                                    userAssertion))
-                                .AccessToken;
+                            try
+                            {
+                                UserAssertion userAssertion = new UserAssertion(tokenAssertion,
+                                    "urn:ietf:params:oauth:grant-type:jwt-bearer", Options.UserName.Invoke());
+                                return (await _authContext.AcquireTokenAsync(Options.Audience, clientCredential,
+                                        userAssertion))
+                                    .AccessToken;
+                            }
+                            catch
+                            {
+                                //swallow
+                            }
                         }
                     }
 
@@ -153,7 +160,8 @@ namespace NCDO
 
         protected virtual string _loginURI { get; } = "/static/home.html";
 
-        public async Task<SessionStatus> Login(CancellationToken cancellationToken = default(CancellationToken), bool fromRequest = false)
+        public async Task<SessionStatus> Login(CancellationToken cancellationToken = default(CancellationToken),
+            bool fromRequest = false)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
