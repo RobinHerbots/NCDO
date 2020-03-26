@@ -88,7 +88,8 @@ namespace NCDO
                     if (AuthenticationModel == AuthenticationModel.Bearer_OnBehalf)
                     {
                         var tokenAssertion = Options.UserAccessToken.Invoke();
-                        if (tokenAssertion != null)
+                        var userName = Options.UserName.Invoke();
+                        if (tokenAssertion != null && userName != null)
                         {
                             UserAssertion userAssertion = new UserAssertion(tokenAssertion,
                                 "urn:ietf:params:oauth:grant-type:jwt-bearer", Options.UserName.Invoke());
@@ -152,14 +153,14 @@ namespace NCDO
 
         protected virtual string _loginURI { get; } = "/static/home.html";
 
-        public async Task<SessionStatus> Login(CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<SessionStatus> Login(CancellationToken cancellationToken = default(CancellationToken), bool fromRequest = false)
         {
             cancellationToken.ThrowIfCancellationRequested();
             ThrowIfDisposed();
             try
             {
                 if (Options.AuthenticationModel != AuthenticationModel.Bearer_OnBehalf ||
-                    !string.IsNullOrEmpty(Options.UserName.Invoke()))
+                    !string.IsNullOrEmpty(Options.UserName.Invoke()) || fromRequest)
                 {
                     var urlBuilder = new StringBuilder(Options.ServiceUri.AbsoluteUri);
                     using (var request = new HttpRequestMessage())

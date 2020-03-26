@@ -583,7 +583,7 @@ namespace NCDO
             if (_cDOSession.LoginResult != SessionStatus.AUTHENTICATION_SUCCESS &&
                 _cDOSession.Options.AuthenticationModel == AuthenticationModel.Bearer_OnBehalf)
             {
-                await _cDOSession.Login(cancellationToken);
+                await _cDOSession.Login(cancellationToken, true);
             }
 
             if (_cDOSession.LoginResult != SessionStatus.AUTHENTICATION_SUCCESS)
