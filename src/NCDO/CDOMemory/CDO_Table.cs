@@ -90,7 +90,7 @@ namespace NCDO.CDOMemory
         {
             lock (_list)
             {
-                if (!_list.ContainsKey(item.GetId()))
+                if (!_list.ContainsKey(item.GetChangedKeyValue))
                 {
                     _list.Add(item.GetId(), item);
                     item.PropertyChanged -= Item_PropertyChanged;
@@ -116,7 +116,7 @@ namespace NCDO.CDOMemory
                                 OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] {this[index]});
                             break;
                         case MergeMode.Replace:
-                            _list[item.GetId()] = item;
+                            _list[item.GetChangedKeyValue] = item;
                             if (notify)
                                 OnCollectionChanged(NotifyCollectionChangedAction.Replace, new[] {item});
                             break;
@@ -144,7 +144,7 @@ namespace NCDO.CDOMemory
             OnCollectionChanged(NotifyCollectionChangedAction.Reset, oldList.Values.ToArray());
         }
 
-        public bool Contains(T item) => _list.ContainsKey(item.GetId());
+        public bool Contains(T item) => _list.ContainsKey(item.GetChangedKeyValue);
 
         public void CopyTo(T[] array, int arrayIndex)
         {
@@ -157,19 +157,19 @@ namespace NCDO.CDOMemory
 
         public int IndexOf(T item)
         {
-            return _list.Keys.ToList().IndexOf(item.GetId());
+            return _list.Keys.ToList().IndexOf(item.GetChangedKeyValue);
         }
 
         public void Insert(int index, T item)
         {
-            if (_list.ContainsKey(item.GetId()))
+            if (_list.ContainsKey(item.GetChangedKeyValue))
             {
-                _list[item.GetId()] = item;
+                _list[item.GetChangedKeyValue] = item;
                 OnCollectionChanged(NotifyCollectionChangedAction.Move, new[] {item});
             }
             else
             {
-                _list.Add(item.GetId(), item);
+                _list.Add(item.GetChangedKeyValue, item);
                 OnCollectionChanged(NotifyCollectionChangedAction.Add, new[] {item});
             }
         }
@@ -185,7 +185,7 @@ namespace NCDO.CDOMemory
         public bool Remove(T item)
         {
             OnCollectionChanged(NotifyCollectionChangedAction.Remove, item);
-            return _list.Remove(item.GetId());
+            return _list.Remove(item.GetChangedKeyValue);
         }
 
         public new void RemoveAt(int index)
@@ -225,15 +225,15 @@ namespace NCDO.CDOMemory
                     AddNew(_new, items, DataRowState.Created);
                     break;
                 case NotifyCollectionChangedAction.Move:
-                    var modifyList = items?.Where(i => !_new.ContainsKey(i.GetId()));
+                    var modifyList = items?.Where(i => !_new.ContainsKey(i.GetChangedKeyValue));
                     AddNew(_changed, modifyList, DataRowState.Modified);
                     break;
                 case NotifyCollectionChangedAction.Remove:
-                    var removeList = items.Where(i => !_new.ContainsKey(i.GetId()));
+                    var removeList = items.Where(i => !_new.ContainsKey(i.GetChangedKeyValue));
                     //cleanup other dicts
                     foreach (var item in items)
                     {
-                        var id = item.GetId();
+                        var id = item.GetChangedKeyValue;
                         _changed.Remove(id);
                         _new.Remove(id);
                     }
@@ -241,7 +241,7 @@ namespace NCDO.CDOMemory
                     AddNew(_deleted, removeList, DataRowState.Deleted);
                     break;
                 case NotifyCollectionChangedAction.Replace:
-                    var replaceList = items.Where(i => !_new.ContainsKey(i.GetId()));
+                    var replaceList = items.Where(i => !_new.ContainsKey(i.GetChangedKeyValue));
                     AddNew(_changed, replaceList, DataRowState.Modified);
                     break;
                 case NotifyCollectionChangedAction.Reset:
@@ -299,7 +299,7 @@ namespace NCDO.CDOMemory
                 {
                     lock (list)
                     {
-                        if (!list.ContainsKey(item.GetId()))
+                        if (!list.ContainsKey(item.GetChangedKeyValue))
                         {
                             var itemClone = item;
                             if (rowState == DataRowState.Deleted)
@@ -323,8 +323,8 @@ namespace NCDO.CDOMemory
         {
             lock (list)
             {
-                var itemId = item.GetId();
-                return list.Any(i => i.GetId() == itemId);
+                var itemId = item.GetChangedKeyValue;
+                return list.Any(i => i.GetChangedKeyValue == itemId);
             }
         }
 

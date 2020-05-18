@@ -16,6 +16,14 @@ namespace NCDO.Interfaces
         /// </summary>
         IEnumerable<KeyValuePair<string, JsonValue>> Data { get; }
 
+        /// <summary>
+        /// Indicated wheter the primarykey has changed
+        /// </summary>
+        bool IsPrimaryKeyChanged {  get; }
+        /// <summary>
+        /// Get the changed keyvalue
+        /// </summary>
+        string GetChangedKeyValue { get; }
         #endregion
 
         #region Methods

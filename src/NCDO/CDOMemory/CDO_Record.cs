@@ -115,6 +115,9 @@ namespace NCDO.CDOMemory
         /// <inheritdoc />
         public JsonPairEnumerable Data => this;
 
+        public bool IsPrimaryKeyChanged => _changeDict.ContainsKey(PrimaryKeyName);
+        public string GetChangedKeyValue => IsPrimaryKeyChanged ? _changeDict[PrimaryKeyName].AsString() : GetId();
+
         /// <inheritdoc />
         public void AcceptRowChanges()
         {
