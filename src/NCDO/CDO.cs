@@ -635,8 +635,7 @@ namespace NCDO
             request.Success = response.IsSuccessStatusCode;
             request.ResponseMessage = response;
             //https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
-            if ((response.Headers.TransferEncodingChunked.HasValue && response.Headers.TransferEncodingChunked.Value) ||
-                response.Content.Headers.ContentLength > 0)
+            if (response.IsSuccessStatusCode)
             {
                 using (var dataStream = await response.Content.ReadAsStreamAsync())
                 {
